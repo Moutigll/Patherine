@@ -1,0 +1,54 @@
+import sqlite3
+
+from utils import connectDb
+
+def createDb():
+	conn, cursor = connectDb()
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS channels (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		discord_channel_id TEXT NOT NULL UNIQUE
+	);
+	""")
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		discord_user_id TEXT NOT NULL UNIQUE
+	);
+	""")
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS messages (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		message_id TEXT NOT NULL UNIQUE,
+		channel_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
+	""")
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS reactions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		message_id INTEGER NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY(message_id) REFERENCES messages(id) ON DELETE CASCADE,
+		UNIQUE(user_id, message_id)
+	);
+	""")
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS admins (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		discord_user_id TEXT NOT NULL UNIQUE
+	);
+	""")
+
+	conn.commit()
+	conn.close()
+	print("Database created successfully.")
