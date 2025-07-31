@@ -8,7 +8,8 @@ def createDb():
 	cursor.execute("""
 	CREATE TABLE IF NOT EXISTS channels (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		discord_channel_id TEXT NOT NULL UNIQUE
+		discord_channel_id TEXT NOT NULL UNIQUE,
+		timezone TEXT DEFAULT 'Europe/Paris'
 	);
 	""")
 
@@ -26,6 +27,7 @@ def createDb():
 		channel_id INTEGER NOT NULL,
 		user_id INTEGER NOT NULL,
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+		category TEXT DEFAULT 'unknown',
 		FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE,
 		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 	);
