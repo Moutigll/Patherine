@@ -31,7 +31,7 @@ class MyBot(commands.Bot):
 		for cmd in self.tree.get_commands():
 			print(f"\t - {cmd.name}")
 		if not self.synced:
-			await self.tree.sync()
+			#await self.tree.sync()
 			self.synced = True
 			log("Commands synced successfully.")
 		else:
