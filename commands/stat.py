@@ -93,9 +93,9 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=()):
 	embed.add_field(name="🔥 Best streak", value=f"{streak} days", inline=False)
 	embed.add_field(
 		name="⏱️ Success delay (sec)",
-		value=f"min: {minDelay:.2f}\n"
-		      f"avg: {avgDelay:.2f}\n"
-		      f"max: {maxDelay:.2f}",
+		value=f"min: {minDelay:.3f}\n"
+			  f"avg: {avgDelay:.3f}\n"
+			  f"max: {maxDelay:.3f}",
 		inline=False
 	)
 
