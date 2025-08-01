@@ -21,6 +21,8 @@ intents.guilds = True
 intents.members = True
 
 addGroup = app_commands.Group(name="add", description="Commands to add channels and admins")
+statGroup = app_commands.Group(name="stat", description="Commands to view statistics")
+leaderboardGroup = app_commands.Group(name="leaderboard", description="Commands to view leaderboards")
 updateChannelCommand = app_commands.Group(name="update", description="Command to update channels")
 
 def printCommands(commandsList, indent=1):
@@ -39,6 +41,7 @@ class MyBot(commands.Bot):
 
 		self.tree.add_command(addGroup)
 		self.tree.add_command(updateChannelCommand)
+		self.tree.add_command(statGroup)
 
 		print("[DEBUG] Commands currently registered in bot.tree:")
 		for cmd in self.tree.get_commands():
@@ -47,7 +50,7 @@ class MyBot(commands.Bot):
 				printCommands(cmd.commands)
 
 		if not self.synced:
-			#await self.tree.sync()
+			await self.tree.sync()
 			self.synced = True
 			log("Commands synced successfully.")
 		else:
