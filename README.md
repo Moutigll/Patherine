@@ -1,40 +1,62 @@
 # Patherine
 
-This project creates a SQLite database to store and analyze Discord messages, users, channels, and reactions. It enforces constraints like:
-- One message per user/channel/day.
-- One reaction per user/message.
+Patherine is a modular Discord bot written in Python using the `discord.py` library.  
+It is designed to be lightweight, extensible, and easy to configure and deploy.  
+The bot supports slash commands, automatic module loading, database interaction with SQLite, and more.
 
-## 🛠 Setup (Python 3.8+ recommended)
+## Features
 
-### 1. Clone the repo
+- Modular command structure
+- SQLite-based persistent storage
+- Slash commands with autocompletion and argument validation
+- Easy setup with a `.env` file
 
-```bash
-git clone <repo-url>
-cd <repo-folder>
+## Installation
+
+1. Clone the repository:
+
+```
+git clone https://github.com/your_username/patherine.git
+cd patherine
 ```
 
-### 2. Create a virtual environment (optional but recommended)
+2. Create a virtual environment and install dependencies:
 
-```bash
+```
 python3 -m venv .venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Run the script
+3. Create a `.env` file in the project root and set your bot token and the owner id:
 
-```bash
+```
+DISCORD_TOKEN=your_discord_bot_token
+OWNER=discord_id
+```
+
+## Usage
+
+Run the bot:
+
+```
 python main.py
 ```
 
-This will create a file `discord_analysis.db` in the current directory.
+## Structure
 
-## 📁 Files
+- `main.py`: Entry point of the bot
+- `commands/`: Contains all the slash command modules
+- `events`: Listener functions for new messages and reactions
+- `utils/`: Utility functions and database access
+- `db/database.db`: SQLite database file
+- `.env`: Stores your token securely
 
-- `main.py` → Script to create the database schema
-- `requirements.txt` → Python dependencies
+## Notes
+
+- You must have Python 3.10+ installed.
+- Database is automatically created if it doesn't exist.
+
+## License
+
+This project is licensed under the GNU-3.0 License. See the `LICENSE` file for more details.
