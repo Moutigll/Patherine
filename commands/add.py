@@ -1,15 +1,15 @@
 
+import typing
 import discord
 from discord import app_commands
 from zoneinfo import ZoneInfo
 
 
-from commands import bot, makeEmbed, OWNER_ID
+from commands import addGroup, makeEmbed, OWNER_ID
 from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
-from utils import connectDb, timezoneAutocomplete
+from utils.utils import connectDb, timezoneAutocomplete
 
-
-@bot.tree.command(name="add_admin", description="Add a user as admin (only OWNER can do that)")
+@addGroup.command(name="admin", description="Add a user as admin (only OWNER can do that)")
 @app_commands.describe(user="User to add as admin")
 async def addAdminCommand(interaction: discord.Interaction, user: discord.User):
 	requesterId = str(interaction.user.id)
@@ -33,10 +33,18 @@ async def addAdminCommand(interaction: discord.Interaction, user: discord.User):
 	finally:
 		conn.close()
 
-@bot.tree.command(name="add_channel", description="Add a channel to the database (only ADMIN can do that)")
-@app_commands.describe(channel="Channel to add", tz_name="Timezone for message parsing (default: Europe/Paris)")
+@addGroup.command(name="channel", description="Add a channel to the database (only ADMIN can do that)")
+@app_commands.describe(
+	channel="Channel to add",
+	role="(Optional) Role to associate with this channel",
+	tz_name="Timezone for message parsing (default: Europe/Paris)")
 @app_commands.autocomplete(tz_name=timezoneAutocomplete)
-async def addChannelCommand(interaction: discord.Interaction, channel: discord.TextChannel, tz_name: str = "Europe/Paris"):
+async def addChannelCommand(
+	interaction: discord.Interaction,
+	channel: discord.TextChannel,
+	role: typing.Optional[discord.Role] = None,
+	tz_name: str = "Europe/Paris"
+):
 	if not await authorize(interaction):
 		return
 
@@ -48,11 +56,15 @@ async def addChannelCommand(interaction: discord.Interaction, channel: discord.T
 		await interaction.response.send_message(f"❌ {channel.mention} already in DB, use /update_channel", ephemeral=True)
 		return
 
-	cursor.execute("INSERT INTO channels(discord_channel_id, timezone) VALUES (?, ?)", (str(channel.id), tz_name))
+	await interaction.response.defer()
+	
+	cursor.execute(
+		"INSERT INTO channels(discord_channel_id, discord_role_id, timezone) VALUES (?, ?, ?)",
+		(str(channel.id), str(role.id) if role else None, tz_name)
+	)
 	conn.commit()
 	internalId = cursor.lastrowid
 
-	await interaction.response.defer()
 	embedMsg = await interaction.followup.send(embed=makeEmbed("Fetching activity...", "Looking through message history ⏳"))
 
 	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name))

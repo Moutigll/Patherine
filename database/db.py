@@ -1,6 +1,4 @@
-import sqlite3
-
-from utils import connectDb
+from utils.utils import connectDb
 
 def createDb():
 	conn, cursor = connectDb()
@@ -9,6 +7,7 @@ def createDb():
 	CREATE TABLE IF NOT EXISTS channels (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		discord_channel_id TEXT NOT NULL UNIQUE,
+		discord_role_id TEXT,
 		timezone TEXT DEFAULT 'Europe/Paris'
 	);
 	""")
@@ -29,7 +28,8 @@ def createDb():
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 		category TEXT DEFAULT 'unknown',
 		FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE,
-		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+		UNIQUE(channel_id, user_id, message_id)
 	);
 	""")
 

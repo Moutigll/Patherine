@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from zoneinfo import available_timezones
 
 from commands import OWNER_ID
-from utils import connectDb
+from utils.utils import connectDb
 
 TIMEZONES = sorted(available_timezones())
 
@@ -33,13 +33,24 @@ async def authorize(interaction: discord.Interaction) -> bool:
 		return False
 	return True
 
-async def fetchMessages(channel, internal_channel_id, cursor, conn, tz, after=None):
+def getUserId(conn, cursor, userId):
+	"""Fetch the user id from the database, or insert it if it doesn't exist."""
+	cursor.execute("SELECT id FROM users WHERE discord_user_id = ?", (userId,))
+	row = cursor.fetchone()
+	if row:
+		return row[0]
+	cursor.execute("INSERT INTO users (discord_user_id) VALUES (?)", (userId,))
+	conn.commit()
+	return cursor.lastrowid
+
+
+async def fetchMessages(channel, internalChannelId, cursor, conn, tz):
 	"""Fetch and store new messages, return map of success messages."""
 	stored = 0
 	messageMap = []
 	userCache = {}
 
-	async for msg in channel.history(limit=None, oldest_first=True, after=after):
+	async for msg in channel.history(limit=None, oldest_first=True):
 		if "cath" not in msg.content.lower():
 			continue
 
@@ -50,21 +61,14 @@ async def fetchMessages(channel, internal_channel_id, cursor, conn, tz, after=No
 
 		uidStr = str(msg.author.id)
 		if uidStr not in userCache:
-			cursor.execute("SELECT id FROM users WHERE discord_user_id = ?", (uidStr,))
-			row = cursor.fetchone()
-			if row:
-				userCache[uidStr] = row[0]
-			else:
-				cursor.execute("INSERT INTO users (discord_user_id) VALUES (?)", (uidStr,))
-				conn.commit()
-				userCache[uidStr] = cursor.lastrowid
+			userCache[uidStr] = getUserId(conn, cursor, uidStr)
 
 		userId = userCache[uidStr]
 		dayStr = localDt.strftime("%Y-%m-%d")
 
 		cursor.execute(
 			"SELECT category FROM messages WHERE user_id = ? AND channel_id = ? AND DATE(timestamp) = ?",
-			(userId, internal_channel_id, dayStr)
+			(userId, internalChannelId, dayStr)
 		)
 		existing = {r[0] for r in cursor.fetchall()}
 		if category in existing:
@@ -78,7 +82,7 @@ async def fetchMessages(channel, internal_channel_id, cursor, conn, tz, after=No
 
 		cursor.execute(
 			"INSERT INTO messages (message_id, channel_id, user_id, timestamp, category) VALUES (?, ?, ?, ?, ?)",
-			(str(msg.id), internal_channel_id, userId, localDt, category)
+			(str(msg.id), internalChannelId, userId, localDt, category)
 		)
 		conn.commit()
 		stored += 1
@@ -103,13 +107,7 @@ async def fetchReactions(channel, cursor, conn, messageMap):
 				if user.bot: continue
 				uidStr = str(user.id)
 				if uidStr not in userCache:
-					cursor.execute("SELECT id FROM users WHERE discord_user_id=?",(uidStr,))
-					row = cursor.fetchone()
-					if row: userCache[uidStr]=row[0]
-					else:
-						cursor.execute("INSERT INTO users (discord_user_id) VALUES (?)",(uidStr,))
-						conn.commit()
-						userCache[uidStr]=cursor.lastrowid
+					userCache[uidStr] = getUserId(conn, cursor, uidStr)
 				cursor.execute(
 					"INSERT OR IGNORE INTO reactions (user_id,message_id) VALUES (?,?)",
 					(userCache[uidStr], internalId)

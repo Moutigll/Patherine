@@ -3,6 +3,7 @@ from discord import Interaction
 from discord.app_commands import Choice
 import importlib
 import os
+from pathlib import Path
 import re
 import subprocess
 from zoneinfo import available_timezones
@@ -19,7 +20,7 @@ def connectDb():
 	return conn, cursor
 
 def loadCommandModules():
-	commandsDir = os.path.join(os.path.dirname(__file__), "commands")
+	commandsDir = Path(__file__).resolve().parent.parent / "commands"
 	for filename in os.listdir(commandsDir):
 		if not filename.endswith(".py") or filename == "__init__.py":
 			continue

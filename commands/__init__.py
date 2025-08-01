@@ -1,9 +1,10 @@
 import os
-from discord.ext import commands
 import discord
+from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 
-from utils import log, loadCommandModules, getGitInfo, formatGitFooter
+from utils.utils import log, loadCommandModules, getGitInfo, formatGitFooter
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -19,6 +20,15 @@ intents.reactions = True
 intents.guilds = True
 intents.members = True
 
+addGroup = app_commands.Group(name="add", description="Commands to add channels and admins")
+updateChannelCommand = app_commands.Group(name="update", description="Command to update channels")
+
+def printCommands(commandsList, indent=1):
+	for cmd in commandsList:
+		print("\t" * indent + f"- {cmd.name}")
+		if hasattr(cmd, "commands") and cmd.commands:
+			printCommands(cmd.commands, indent + 1)
+
 class MyBot(commands.Bot):
 	def __init__(self):
 		super().__init__(command_prefix="!", intents=intents, help_command=None)
@@ -27,9 +37,15 @@ class MyBot(commands.Bot):
 	async def setup_hook(self):
 		loadCommandModules()
 
+		self.tree.add_command(addGroup)
+		self.tree.add_command(updateChannelCommand)
+
 		print("[DEBUG] Commands currently registered in bot.tree:")
 		for cmd in self.tree.get_commands():
-			print(f"\t - {cmd.name}")
+			print(f"- {cmd.name}")
+			if hasattr(cmd, "commands") and cmd.commands:
+				printCommands(cmd.commands)
+
 		if not self.synced:
 			#await self.tree.sync()
 			self.synced = True
@@ -37,7 +53,6 @@ class MyBot(commands.Bot):
 		else:
 			log("Commands already synced, skipping sync.")
 
-import re
 
 def makeEmbed(title: str, description: str) -> discord.Embed:
 	embed = discord.Embed(
@@ -46,7 +61,5 @@ def makeEmbed(title: str, description: str) -> discord.Embed:
 		color=discord.Color.purple()
 	)
 	return embed
-
-
 
 bot = MyBot()

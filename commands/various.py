@@ -3,11 +3,11 @@ import discord
 from discord import app_commands
 from zoneinfo import ZoneInfo
 
-from commands import bot, makeEmbed
+from commands import makeEmbed, updateChannelCommand
 from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
-from utils import connectDb
+from utils.utils import connectDb
 
-@bot.tree.command(name="update_channel", description="Update a channel with new messages and reactions")
+@updateChannelCommand.command(name="channel", description="Update a channel with new messages and reactions")
 @app_commands.describe(channel="Channel to update")
 async def updateChannelCommand(interaction: discord.Interaction, channel: discord.TextChannel):
 	if not await authorize(interaction):
@@ -26,11 +26,7 @@ async def updateChannelCommand(interaction: discord.Interaction, channel: discor
 	await interaction.response.defer()
 	embedMsg = await interaction.followup.send(embed=makeEmbed("Updating activity...", "Fetching new messages ⏳"))
 
-	cursor.execute("SELECT MAX(timestamp) FROM messages WHERE channel_id = ?", (internalId,))
-	lastTs = cursor.fetchone()[0]
-	afterParam = datetime.datetime.fromisoformat(lastTs) if lastTs else None
-
-	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName), afterParam)
+	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName))
 
 	await embedMsg.edit(embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"))
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
