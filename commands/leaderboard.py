@@ -2,9 +2,11 @@ import discord
 from discord import app_commands, Interaction
 from discord.ui import View, button, Button
 from math import ceil
-from datetime import datetime, timedelta
+from datetime import datetime
+
 from utils.utils import connectDb
 from commands import FOOTER_TEXT, leaderboardGroup
+from commands.stat import calculateStreak
 
 class Leaderboard(View):
 	def __init__(self, interaction: Interaction, title: str, data: list[tuple[str, int]], itemsPerPage: int = 10, timeout: float = 120.0):
@@ -174,58 +176,60 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 	board = Leaderboard(interaction, title, data)
 	await board.start()
 
-
 @leaderboardGroup.command(name="streaks", description="Top users by longest success streak")
 @app_commands.describe(channel="Optional channel to analyze")
 async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	await interaction.response.defer()
 	conn, cursor = connectDb()
+
 	if channel:
-		cursor.execute("SELECT id FROM channels WHERE discord_channel_id = ?", (str(channel.id),))
+		cursor.execute(
+			"SELECT id FROM channels WHERE discord_channel_id = ?",
+			(str(channel.id),)
+		)
 		row = cursor.fetchone()
 		if not row:
 			conn.close()
-			await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
+			await interaction.followup.send(
+				f"❌ {channel.mention} is not registered.",
+				ephemeral=True
+			)
 			return
 		title = f"🔥 Streaks Leaderboard for #{channel.name}"
 		cursor.execute("""
-			SELECT users.discord_user_id, DATE(m.timestamp)
+			SELECT users.discord_user_id, DATE(m.timestamp) as day
 			FROM messages m
 			JOIN users ON users.id = m.user_id
 			WHERE m.category = 'success' AND m.channel_id = ?
-			ORDER BY users.discord_user_id, DATE(m.timestamp)
+			GROUP BY users.discord_user_id, day
+			ORDER BY users.discord_user_id, day
 		""", (row[0],))
 	else:
 		title = "🔥 Streaks Leaderboard (Global)"
 		cursor.execute("""
-			SELECT users.discord_user_id, DATE(m.timestamp)
+			SELECT users.discord_user_id, DATE(m.timestamp) as day
 			FROM messages m
 			JOIN users ON users.id = m.user_id
 			WHERE m.category = 'success'
-			ORDER BY users.discord_user_id, DATE(m.timestamp)
+			GROUP BY users.discord_user_id, day
+			ORDER BY users.discord_user_id, day
 		""")
+
 	rows = cursor.fetchall()
 	conn.close()
-	streaks = {}
-	lastDate = {}
-	# Will optimize later whit a new colum in users to avoid itering on all messages
+
+	# Build per-user list of days
+	dates_per_user: dict[str, list[str]] = {}
 	for userId, day in rows:
-		if userId not in streaks:
-			streaks[userId] = current = 1
-		else:
-			prev = lastDate[userId]
-			d0 = datetime.fromisoformat(prev).date()
-			d1 = datetime.fromisoformat(day).date()
-			if d1 - d0 == timedelta(days=1):
-				current = streaks[userId] + 1
-				streaks[userId] = current
-			else:
-				streaks[userId] = current = 1
-		lastDate[userId] = day
-	data = []
-	for userId, s in streaks.items():
+		dates_per_user.setdefault(userId, []).append(day)
+
+	# Compute best streak per user
+	data: list[tuple[str,int]] = []
+	for userId, dayList in dates_per_user.items():
+		best = calculateStreak(dayList)
 		member = interaction.guild.get_member(int(userId))
 		name = member.display_name if member else f"Unknown ({userId})"
-		data.append((name, s))
+		data.append((name, best))
+
 	board = Leaderboard(interaction, title, data)
 	await board.start()
