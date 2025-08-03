@@ -4,17 +4,17 @@ from discord.ui import View, button, Button
 from math import ceil
 from datetime import datetime
 
-from utils.utils import connectDb
+from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup
 from commands.stat import calculateStreak
 
 class Leaderboard(View):
-	def __init__(self, interaction: Interaction, title: str, data: list[tuple[str, int]], itemsPerPage: int = 10, timeout: float = 120.0):
+	def __init__(self, interaction: Interaction, title: str, data: list[tuple[str, int]], itemsPerPage: int = 10, timeout: float = 120.0, sortReverse: bool = True):
 		super().__init__(timeout=timeout)
 		self.interaction = interaction
 		self.title = title
 		self.itemsPerPage = itemsPerPage
-		self.entries = sorted(data, key=lambda x: x[1], reverse=True)
+		self.entries = sorted(data, key=lambda x: x[1], reverse=sortReverse)
 		self.pageCount = max(1, ceil(len(self.entries) / itemsPerPage))
 		self.currentPage = 0
 		self.prevButton.disabled = True
@@ -27,7 +27,7 @@ class Leaderboard(View):
 		slice_ = self.entries[start:end]
 		description = ""
 		for idx, (name, value) in enumerate(slice_, start=start + 1):
-			description += f"`#{idx:<2}` {name} — **{value}**\n"
+			description += f"`#{idx:<2}` {escapeMarkdown(name)} — **{value}**\n"
 		description += f"\n\n{FOOTER_TEXT}"
 		embed = discord.Embed(title=self.title, description=description or "*No data*", color=discord.Color.purple())
 		embed.set_footer(text=f"Page {self.currentPage+1}/{self.pageCount}")
@@ -52,6 +52,23 @@ class Leaderboard(View):
 	async def start(self):
 		await self.interaction.followup.send(embed=self.makeEmbed(), view=self)
 
+async def getUsername(userId: str, interaction: Interaction) -> str:
+	try:
+		member = interaction.guild.get_member(int(userId))
+		if member:
+			return member.display_name
+	except (ValueError, TypeError):
+		pass
+	user = interaction.client.get_user(int(userId))
+	if user:
+		return user.name
+	try:
+		user = await interaction.client.fetch_user(int(userId))
+		if user:
+			return user.name
+	except Exception:
+		pass
+	return f"Unknown ({userId})"
 
 @leaderboardGroup.command(name="messages", description="Top users by success messages")
 @app_commands.describe(channel="Optional channel to analyze")
@@ -86,12 +103,10 @@ async def messagesLeaderboard(interaction: Interaction, channel: discord.TextCha
 	conn.close()
 	data = []
 	for userId, cnt in rows:
-		member = interaction.guild.get_member(int(userId))
-		name = member.display_name if member else f"Unknown ({userId})"
+		name = await getUsername(userId, interaction)
 		data.append((name, cnt))
 	board = Leaderboard(interaction, title, data)
 	await board.start()
-
 
 @leaderboardGroup.command(name="reactions", description="Top users by reaction count")
 @app_commands.describe(channel="Optional channel to analyze")
@@ -126,16 +141,13 @@ async def reactionsLeaderboard(interaction: Interaction, channel: discord.TextCh
 	conn.close()
 	data = []
 	for userId, cnt in rows:
-		member = interaction.guild.get_member(int(userId))
-		name = member.display_name if member else f"Unknown ({userId})"
+		name = await getUsername(userId, interaction)
 		data.append((name, cnt))
 	board = Leaderboard(interaction, title, data)
 	await board.start()
-
-
 @leaderboardGroup.command(name="delays", description="Best reaction times for success messages")
-@app_commands.describe(channel="Optional channel to analyze")
-async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
+@app_commands.describe(channel="Optional channel to analyze, worst='Show worst delays instead of best'", worst="Display users' worst delays instead of best ones")
+async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, worst: bool = False):
 	await interaction.response.defer()
 	conn, cursor = connectDb()
 	if channel:
@@ -143,18 +155,19 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 		row = cursor.fetchone()
 		if not row:
 			conn.close()
-			await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
-			return
-		title = f"⏱️ Best Delays Leaderboard for #{channel.name}"
-		cursor.execute("""
+			return await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
+		title = f"⏱️ {'Worst' if worst else 'Best'} Delays Leaderboard for #{channel.name}"
+		cursor.execute(
+			"""
 			SELECT users.discord_user_id, m.timestamp
 			FROM messages m
 			JOIN users ON users.id = m.user_id
 			WHERE m.category = 'success' AND m.channel_id = ?
 		""", (row[0],))
 	else:
-		title = "⏱️ Best Delays Leaderboard (Global)"
-		cursor.execute("""
+		title = f"⏱️ {'Worst' if worst else 'Best'} Delays Leaderboard (Global)"
+		cursor.execute(
+			"""
 			SELECT users.discord_user_id, m.timestamp
 			FROM messages m
 			JOIN users ON users.id = m.user_id
@@ -162,18 +175,24 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 		""")
 	rows = cursor.fetchall()
 	conn.close()
-	delays = {}
+
+	delays: dict[str, float] = {}
 	for userId, ts in rows:
 		dt = datetime.fromisoformat(ts)
-		sec = dt.second + dt.microsecond / 1_000_000
-		if userId not in delays or sec < delays[userId]:
-			delays[userId] = sec
-	data = []
+		delta = dt.time().second + dt.time().microsecond / 1_000_000
+		if worst:
+			if userId not in delays or delta > delays[userId]:
+				delays[userId] = delta
+		else:
+			if userId not in delays or delta < delays[userId]:
+				delays[userId] = delta
+
+	data: list[tuple[str, float]] = []
 	for userId, d in delays.items():
-		member = interaction.guild.get_member(int(userId))
-		name = member.display_name if member else f"Unknown ({userId})"
-		data.append((name, round(d, 3)))
-	board = Leaderboard(interaction, title, data)
+		name = await getUsername(userId, interaction)
+		data.append((name, d))
+
+	board = Leaderboard(interaction, title, data, sortReverse=worst)
 	await board.start()
 
 @leaderboardGroup.command(name="streaks", description="Top users by longest success streak")
@@ -218,17 +237,14 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 	rows = cursor.fetchall()
 	conn.close()
 
-	# Build per-user list of days
 	dates_per_user: dict[str, list[str]] = {}
 	for userId, day in rows:
 		dates_per_user.setdefault(userId, []).append(day)
 
-	# Compute best streak per user
 	data: list[tuple[str,int]] = []
 	for userId, dayList in dates_per_user.items():
 		best = calculateStreak(dayList)
-		member = interaction.guild.get_member(int(userId))
-		name = member.display_name if member else f"Unknown ({userId})"
+		name = await getUsername(userId, interaction)
 		data.append((name, best))
 
 	board = Leaderboard(interaction, title, data)

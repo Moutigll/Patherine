@@ -72,3 +72,10 @@ async def timezoneAutocomplete(interaction: Interaction, current: str) -> list[C
 		if len(results) >= 25:
 			break
 	return results
+
+def escapeMarkdown(text: str) -> str:
+	return text.replace("\\", "\\\\") \
+	           .replace("*", "\\*") \
+	           .replace("_", "\\_") \
+	           .replace("~", "\\~") \
+	           .replace("`", "\\`")

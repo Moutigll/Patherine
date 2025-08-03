@@ -3,7 +3,7 @@ from discord import app_commands
 from datetime import datetime, timedelta
 
 from commands import FOOTER_TEXT, statGroup
-from utils.utils import connectDb
+from utils.utils import connectDb, escapeMarkdown
 
 
 def addCondition(baseWhere, newCond):
@@ -134,4 +134,4 @@ async def userStats(interaction: discord.Interaction, user: discord.User):
 	"""Stats for a specific Discord user."""
 	where = "WHERE m.user_id = (SELECT id FROM users WHERE discord_user_id = ?)"
 	params = (str(user.id),)
-	await sendStatsEmbed(interaction, f"📊 Stats for {user.name}", where, params)
+	await sendStatsEmbed(interaction, f"📊 Stats for {escapeMarkdown(user.name)}", where, params)
