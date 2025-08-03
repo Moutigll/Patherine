@@ -23,6 +23,7 @@ async def on_ready():
 	for guild in bot.guilds:
 		print(f"\t\t\t\t- {guild.name} - {guild.member_count} members")
 	checkRolesRemoval.start()
+	updateStatus.start()
 
 
 @tasks.loop(minutes=1)
@@ -91,6 +92,28 @@ async def checkRolesRemoval():
 						log(f"HTTP error removing role: {e}")
 
 			conn.close()
+
+@tasks.loop(minutes=5)
+async def updateStatus():
+	conn, cursor = connectDb()
+	cursor.execute("SELECT COUNT(*) FROM messages WHERE category = 'success'")
+	totalSuccess = cursor.fetchone()[0] or 0
+
+	cursor.execute("SELECT COUNT(*) FROM reactions")
+	totalReactions = cursor.fetchone()[0] or 0
+
+	cursor.execute("SELECT COUNT(DISTINCT user_id) FROM messages WHERE category = 'success'")
+	totalUsersWithSuccess = cursor.fetchone()[0] or 0
+	conn.close()
+
+	activity = discord.Game(
+		f"{totalSuccess} caths by {totalUsersWithSuccess} users | {totalReactions} reactions 💜"
+	)
+	try:
+		await bot.change_presence(status=discord.Status.online, activity=activity)
+		log(f"Updated status: {activity.name}")
+	except Exception as e:
+		log(f"Failed to update presence: {e}")
 
 
 if __name__ == "__main__":

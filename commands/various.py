@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 import discord
 from discord import app_commands
 from zoneinfo import ZoneInfo
@@ -25,8 +25,9 @@ async def updateChannelCommand(interaction: discord.Interaction, channel: discor
 
 	await interaction.response.defer()
 	embedMsg = await interaction.followup.send(embed=makeEmbed("Updating activity...", "Fetching new messages ⏳"))
+	addStart = datetime.now(timezone.utc)
 
-	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName))
+	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName), embedMsg, addStart)
 
 	await embedMsg.edit(embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"))
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)

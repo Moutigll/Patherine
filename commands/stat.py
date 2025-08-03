@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from commands import FOOTER_TEXT, statGroup
 from utils.utils import connectDb, escapeMarkdown
@@ -20,15 +20,21 @@ def calculateStreak(dateStrings):
 
 	uniqueDays = sorted({datetime.fromisoformat(d).date() for d in dateStrings})
 	maxStreak = currentStreak = 1
+	maxDay = uniqueDays[0] if uniqueDays else None
 
 	for previous, current in zip(uniqueDays, uniqueDays[1:]):
 		if current - previous == timedelta(days=1):
 			currentStreak += 1
-			maxStreak = max(maxStreak, currentStreak)
+			if currentStreak > maxStreak:
+				maxStreak = currentStreak
+				maxDay = current
 		else:
 			currentStreak = 1
 
-	return maxStreak
+	now = datetime.now(timezone.utc).date()
+	if uniqueDays and uniqueDays[-1] != now:
+		currentStreak = 0
+	return maxStreak, maxDay, currentStreak, now
 
 
 def calculateDelays(timestamps):
@@ -39,9 +45,10 @@ def calculateDelays(timestamps):
 	return min(delays), sum(delays) / len(delays), max(delays)
 
 
-async def sendStatsEmbed(interaction, title, whereClause="", params=()):
+async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=False):
 	conn, cursor = connectDb()
 
+	# Messages par catégorie
 	cursor.execute(f"""
 		SELECT category, COUNT(*) 
 		FROM messages m
@@ -56,7 +63,26 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=()):
 		JOIN messages m ON r.message_id = m.id
 		{whereClause.replace("m.", "m.")}
 	""", params)
-	totalReactions = cursor.fetchone()[0]
+	totalReceived = cursor.fetchone()[0]
+
+	totalGiven = None
+	if isUser:
+		cursor.execute("""
+			SELECT COUNT(*)
+			  FROM reactions r
+			 WHERE r.user_id = (
+			   SELECT id FROM users WHERE discord_user_id = ?
+			 )
+		""", params)
+		totalGiven = cursor.fetchone()[0]
+
+	if isUser:
+		reactionsStr = (
+			f"Received: {totalReceived} 💜\n"
+			f"Given:	{totalGiven} 💜"
+		)
+	else:
+		reactionsStr = f"{totalReceived} 💜"
 
 	streakWhere = addCondition(whereClause, "m.category = 'success'")
 	cursor.execute(f"""
@@ -66,16 +92,19 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=()):
 		ORDER BY DATE(m.timestamp)
 	""", params)
 	successDates = [row[0] for row in cursor.fetchall()]
-	streak = calculateStreak(successDates)
+	best, lastDay, current, todayUtc = calculateStreak(successDates)
+	if lastDay and (todayUtc - lastDay < timedelta(days=1)):
+		streakStr = f"🔥 {best} days"
+	else:
+		streakStr = f"{best} days (current: {current})"
 
-	# Success delays
 	cursor.execute(f"""
 		SELECT m.timestamp
 		FROM messages m
 		{streakWhere}
 	""", params)
-	timestamps = [datetime.fromisoformat(row[0]) for row in cursor.fetchall()]
-	minDelay, avgDelay, maxDelay = calculateDelays(timestamps)
+	timestamps = [datetime.fromisoformat(r[0]) for r in cursor.fetchall()]
+	minD, avgD, maxD = calculateDelays(timestamps)
 
 	conn.close()
 
@@ -83,26 +112,26 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=()):
 	embed.add_field(
 		name="📥 Messages",
 		value=(
-			f"• Fail: {categoryCounts.get('fail', 0)}\n"
+			f"• Fail:	{categoryCounts.get('fail', 0)}\n"
 			f"• Success: {categoryCounts.get('success', 0)}\n"
-			f"• Choke: {categoryCounts.get('choke', 0)}"
+			f"• Choke:   {categoryCounts.get('choke', 0)}"
 		),
 		inline=False
 	)
-	embed.add_field(name="💜 Reactions", value=str(totalReactions), inline=False)
-	embed.add_field(name="🔥 Best streak", value=f"{streak} days", inline=False)
+	embed.add_field(name="💜 Reactions", value=reactionsStr, inline=False)
+	embed.add_field(name="🔥 Streak", value=streakStr, inline=False)
 	embed.add_field(
 		name="⏱️ Success delay (sec)",
-		value=f"min: {minDelay:.3f}\n"
-			  f"avg: {avgDelay:.3f}\n"
-			  f"max: {maxDelay:.3f}",
+		value=(
+			f"min: {minD:.3f}\n"
+			f"avg: {avgD:.3f}\n"
+			f"max: {maxD:.3f}"
+		),
 		inline=False
 	)
-
 	embed.add_field(name="", value=FOOTER_TEXT)
 
 	await interaction.response.send_message(embed=embed, ephemeral=True)
-
 
 @statGroup.command(name="global", description="Global stats across all channels")
 async def globalStats(interaction: discord.Interaction):
@@ -125,7 +154,7 @@ async def myStats(interaction: discord.Interaction):
 	userId = str(interaction.user.id)
 	where = "WHERE m.user_id = (SELECT id FROM users WHERE discord_user_id = ?)"
 	params = (userId,)
-	await sendStatsEmbed(interaction, "📊 My statistics", where, params)
+	await sendStatsEmbed(interaction, "📊 My statistics", where, params, isUser=True)
 
 
 @statGroup.command(name="user", description="Stats for a specific user")
@@ -134,4 +163,4 @@ async def userStats(interaction: discord.Interaction, user: discord.User):
 	"""Stats for a specific Discord user."""
 	where = "WHERE m.user_id = (SELECT id FROM users WHERE discord_user_id = ?)"
 	params = (str(user.id),)
-	await sendStatsEmbed(interaction, f"📊 Stats for {escapeMarkdown(user.name)}", where, params)
+	await sendStatsEmbed(interaction, f"📊 Stats for {escapeMarkdown(user.name)}", where, params, isUser=True)

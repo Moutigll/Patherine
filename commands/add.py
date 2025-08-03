@@ -1,5 +1,6 @@
 
 import typing
+from datetime import datetime, timezone
 import discord
 from discord import app_commands
 from zoneinfo import ZoneInfo
@@ -66,8 +67,9 @@ async def addChannelCommand(
 	internalId = cursor.lastrowid
 
 	embedMsg = await interaction.followup.send(embed=makeEmbed("Fetching activity...", "Looking through message history ⏳"))
+	addStart = datetime.now(timezone.utc)
 
-	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name))
+	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name), embedMsg, addStart)
 
 	await embedMsg.edit(embed=makeEmbed("Fetching reactions...", "Looking through reactions 💜"))
 

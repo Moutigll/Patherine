@@ -2,7 +2,7 @@ import discord
 from discord import app_commands, Interaction
 from discord.ui import View, button, Button
 from math import ceil
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup
@@ -145,9 +145,14 @@ async def reactionsLeaderboard(interaction: Interaction, channel: discord.TextCh
 		data.append((name, cnt))
 	board = Leaderboard(interaction, title, data)
 	await board.start()
+
 @leaderboardGroup.command(name="delays", description="Best reaction times for success messages")
-@app_commands.describe(channel="Optional channel to analyze, worst='Show worst delays instead of best'", worst="Display users' worst delays instead of best ones")
-async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, worst: bool = False):
+@app_commands.describe(channel="Optional channel to analyze, worst='Show worst delays instead of best'", worst="Display users' worst delays instead of best ones", avg="Show users' average delays instead of best ones")
+async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, worst: bool = False, avg: bool = False):
+	if worst and avg:
+		await interaction.response.send_message("❌ You cannot use both 'worst' and 'avg' options at the same time.", ephemeral=True)
+		return
+
 	await interaction.response.defer()
 	conn, cursor = connectDb()
 	if channel:
@@ -176,21 +181,25 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 	rows = cursor.fetchall()
 	conn.close()
 
-	delays: dict[str, float] = {}
+	deltasPerUser: dict[str, list[float]] = {}
 	for userId, ts in rows:
 		dt = datetime.fromisoformat(ts)
-		delta = dt.time().second + dt.time().microsecond / 1_000_000
-		if worst:
-			if userId not in delays or delta > delays[userId]:
-				delays[userId] = delta
-		else:
-			if userId not in delays or delta < delays[userId]:
-				delays[userId] = delta
+		delta = dt.second + dt.microsecond / 1_000_000
+		deltasPerUser.setdefault(userId, []).append(delta)
 
 	data: list[tuple[str, float]] = []
-	for userId, d in delays.items():
+	for userId, deltas in deltasPerUser.items():
 		name = await getUsername(userId, interaction)
-		data.append((name, d))
+		if avg:
+			value = round(sum(deltas) / len(deltas), 3)
+			name = f"{name} ({len(deltas)})"
+		elif worst:
+			value = max(deltas)
+		else:
+			value = min(deltas)
+
+		data.append((name, value))
+
 
 	board = Leaderboard(interaction, title, data, sortReverse=worst)
 	await board.start()
@@ -237,14 +246,20 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 	rows = cursor.fetchall()
 	conn.close()
 
-	dates_per_user: dict[str, list[str]] = {}
+	datesPerUser: dict[str, list[str]] = {}
 	for userId, day in rows:
-		dates_per_user.setdefault(userId, []).append(day)
+		datesPerUser.setdefault(userId, []).append(day)
 
 	data: list[tuple[str,int]] = []
-	for userId, dayList in dates_per_user.items():
-		best = calculateStreak(dayList)
+	for userId, dayList in datesPerUser.items():
+		best, lastDay, currentStreak, todayUtc = calculateStreak(dayList)
 		name = await getUsername(userId, interaction)
+		if lastDay:
+			if todayUtc - lastDay < timedelta(days=1):
+				name = f"🔥 {name}"
+			else:
+				name = f"{name} ({currentStreak})"
+
 		data.append((name, best))
 
 	board = Leaderboard(interaction, title, data)

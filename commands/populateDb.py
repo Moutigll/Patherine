@@ -44,7 +44,7 @@ def getUserId(conn, cursor, userId):
 	return cursor.lastrowid
 
 
-async def fetchMessages(channel, internalChannelId, cursor, conn, tz):
+async def fetchMessages(channel, internalChannelId, cursor, conn, tz, embedMsg, startTime):
 	"""Fetch and store new messages, return map of success messages."""
 	stored = 0
 	messageMap = []
@@ -89,6 +89,9 @@ async def fetchMessages(channel, internalChannelId, cursor, conn, tz):
 		if category == "success":
 			messageMap.append((cursor.lastrowid, msg.id))
 
+		if stored % 100 == 0:
+			elapsed = (datetime.now(timezone.utc) - startTime).total_seconds()
+			await embedMsg.edit(content=f"Fetching messages... {stored} fetched\nElapsed: {elapsed:.1f}s\nStarted at: {startTime.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 	return stored, messageMap
 
 
@@ -96,24 +99,44 @@ async def fetchReactions(channel, cursor, conn, messageMap):
 	"""Fetch and store new reactions, return count."""
 	count = 0
 	userCache = {}
+	pendingInserts = []
+
 	for internalId, discordId in messageMap:
 		try:
 			msgObj = await channel.fetch_message(discordId)
-		except:
+		except Exception as e:
+			print(f"Failed to fetch message {discordId}: {e}")
 			continue
+
 		for react in msgObj.reactions:
-			if str(react.emoji)!="💜": continue
-			async for user in react.users():
-				if user.bot: continue
-				uidStr = str(user.id)
-				if uidStr not in userCache:
-					userCache[uidStr] = getUserId(conn, cursor, uidStr)
-				cursor.execute(
-					"INSERT OR IGNORE INTO reactions (user_id,message_id) VALUES (?,?)",
-					(userCache[uidStr], internalId)
-				)
-				conn.commit()
-				count+=1
+			if str(react.emoji) != "💜":
+				continue
+			try:
+				async for user in react.users():
+					if user.bot:
+						continue
+
+					uidStr = str(user.id)
+					if uidStr not in userCache:
+						userCache[uidStr] = getUserId(conn, cursor, uidStr)
+
+					pendingInserts.append((userCache[uidStr], internalId))
+					count += 1
+					if len(pendingInserts) >= 100:
+						cursor.executemany(
+							"INSERT OR IGNORE INTO reactions (user_id, message_id) VALUES (?, ?)",
+							pendingInserts)
+						conn.commit()
+						pendingInserts.clear()
+			except Exception as e:
+				print(f"Error fetching users for message {discordId}: {e}")
+
+	if pendingInserts:
+		cursor.executemany(
+			"INSERT OR IGNORE INTO reactions (user_id, message_id) VALUES (?, ?)",
+			pendingInserts)
+		conn.commit()
+
 	return count
 
 async def generateSummary(cursor, channelId, stored, reacted):
