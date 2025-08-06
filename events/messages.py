@@ -31,7 +31,7 @@ async def on_message(message: discord.Message):
 		return
 
 	uidStr = str(message.author.id)
-	userId = getUserId(conn, cursor, uidStr)  # <-- utilisation de getUserId ici
+	userId = getUserId(conn, cursor, uidStr)
 
 	dateStr = localDt.date().isoformat()
 
@@ -55,13 +55,25 @@ async def on_message(message: discord.Message):
 		except discord.HTTPException:
 			pass
 
-		if roleId:
-			guild = message.guild
-			role = guild.get_role(int(roleId))
-			if role and role not in message.author.roles:
-				try:
+		cursor.execute(
+			"""
+			SELECT DISTINCT c.discord_role_id
+			FROM channels c
+			JOIN messages m ON m.channel_id = c.id
+			WHERE m.user_id = ? AND m.category = 'success' AND c.discord_role_id IS NOT NULL
+			""",
+			(userId,))
+		rows = cursor.fetchall()
+		conn.close()
+
+		guild = message.guild
+		for (roleId,) in rows:
+			try:
+				role = guild.get_role(int(roleId))
+				if role and role not in message.author.roles:
 					await message.author.add_roles(role, reason="Has rightfully worshipped Catherine!")
-				except discord.Forbidden:
-					log(f"Missing permissions to add role {role.name} to {message.author}")
+			except Exception as e:
+				log(f"Failed to add role {roleId} to {message.author.id}: {e}")
+		return
 
 	conn.close()

@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from commands import FOOTER_TEXT, statGroup
 from utils.utils import connectDb, escapeMarkdown
@@ -13,28 +14,28 @@ def addCondition(baseWhere, newCond):
 	return f"WHERE {newCond}"
 
 
-def calculateStreak(dateStrings):
-	"""Returns the longest streak (in days) of consecutive success dates."""
+def calculateStreak(dateStrings: list[str], useTimezone=ZoneInfo('UTC')) -> tuple[int, date | None, int, date]:
+	"""Returns (longestStreak, endOfLongestStreak, currentStreak, todayDate) based on consecutive days."""
 	if not dateStrings:
-		return 0
+		return 0, None, 0, datetime.now(useTimezone).date()
 
 	uniqueDays = sorted({datetime.fromisoformat(d).date() for d in dateStrings})
-	maxStreak = currentStreak = 1
-	maxDay = uniqueDays[0] if uniqueDays else None
+	maxStreak = currentCount = 1
+	maxDay = uniqueDays[0]
 
-	for previous, current in zip(uniqueDays, uniqueDays[1:]):
-		if current - previous == timedelta(days=1):
-			currentStreak += 1
-			if currentStreak > maxStreak:
-				maxStreak = currentStreak
-				maxDay = current
+	for prevDay, currDay in zip(uniqueDays, uniqueDays[1:]):
+		if currDay - prevDay == timedelta(days=1):
+			currentCount += 1
+			if currentCount > maxStreak:
+				maxStreak = currentCount
+				maxDay = currDay
 		else:
-			currentStreak = 1
+			currentCount = 1
 
-	now = datetime.now(timezone.utc).date()
-	if uniqueDays and uniqueDays[-1] != now:
-		currentStreak = 0
-	return maxStreak, maxDay, currentStreak, now
+	today = datetime.now(useTimezone).date()
+	currentStreak = currentCount if uniqueDays[-1] == today else 0
+
+	return maxStreak, maxDay, currentStreak, today
 
 
 def calculateDelays(timestamps):
@@ -48,7 +49,6 @@ def calculateDelays(timestamps):
 async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=False):
 	conn, cursor = connectDb()
 
-	# Messages par catégorie
 	cursor.execute(f"""
 		SELECT category, COUNT(*) 
 		FROM messages m
@@ -75,14 +75,27 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 			 )
 		""", params)
 		totalGiven = cursor.fetchone()[0]
-
-	if isUser:
 		reactionsStr = (
 			f"Received: {totalReceived} 💜\n"
 			f"Given:	{totalGiven} 💜"
 		)
+
+		cursor.execute("""
+			SELECT timezone
+			  FROM users
+			 WHERE discord_user_id = ?
+		""", params)
+		userTzStr = cursor.fetchone()
+		if userTzStr and userTzStr[0]:
+			try:
+				userTz = ZoneInfo(userTzStr[0])
+			except Exception:
+				userTz = timezone.utc
+		else:
+			userTz = timezone.utc
 	else:
 		reactionsStr = f"{totalReceived} 💜"
+		userTz = timezone.utc
 
 	streakWhere = addCondition(whereClause, "m.category = 'success'")
 	cursor.execute(f"""
@@ -92,7 +105,7 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 		ORDER BY DATE(m.timestamp)
 	""", params)
 	successDates = [row[0] for row in cursor.fetchall()]
-	best, lastDay, current, todayUtc = calculateStreak(successDates)
+	best, lastDay, current, todayUtc = calculateStreak(successDates, useTimezone=userTz)
 	if lastDay and (todayUtc - lastDay < timedelta(days=1)):
 		streakStr = f"🔥 {best} days"
 	else:

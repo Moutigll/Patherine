@@ -3,6 +3,7 @@ from discord import app_commands, Interaction
 from discord.ui import View, button, Button
 from math import ceil
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup
@@ -205,8 +206,8 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 	await board.start()
 
 @leaderboardGroup.command(name="streaks", description="Top users by longest success streak")
-@app_commands.describe(channel="Optional channel to analyze")
-async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
+@app_commands.describe(channel="Optional channel to analyze", current="Show current streak instead of best streak")
+async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, current: bool = False):
 	await interaction.response.defer()
 	conn, cursor = connectDb()
 
@@ -218,49 +219,59 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 		row = cursor.fetchone()
 		if not row:
 			conn.close()
-			await interaction.followup.send(
-				f"❌ {channel.mention} is not registered.",
-				ephemeral=True
-			)
+			await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
 			return
 		title = f"🔥 Streaks Leaderboard for #{channel.name}"
-		cursor.execute("""
-			SELECT users.discord_user_id, DATE(m.timestamp) as day
+		cursor.execute(
+			"""
+			SELECT u.discord_user_id, u.timezone, DATE(m.timestamp) AS day
 			FROM messages m
-			JOIN users ON users.id = m.user_id
+			JOIN users u ON u.id = m.user_id
 			WHERE m.category = 'success' AND m.channel_id = ?
-			GROUP BY users.discord_user_id, day
-			ORDER BY users.discord_user_id, day
-		""", (row[0],))
+			GROUP BY u.discord_user_id, u.timezone, day
+			ORDER BY u.discord_user_id, day
+			""",
+			(row[0],)
+		)
 	else:
 		title = "🔥 Streaks Leaderboard (Global)"
-		cursor.execute("""
-			SELECT users.discord_user_id, DATE(m.timestamp) as day
+		cursor.execute(
+			"""
+			SELECT u.discord_user_id, u.timezone, DATE(m.timestamp) AS day
 			FROM messages m
-			JOIN users ON users.id = m.user_id
+			JOIN users u ON u.id = m.user_id
 			WHERE m.category = 'success'
-			GROUP BY users.discord_user_id, day
-			ORDER BY users.discord_user_id, day
-		""")
+			GROUP BY u.discord_user_id, u.timezone, day
+			ORDER BY u.discord_user_id, day
+			"""
+		)
 
 	rows = cursor.fetchall()
 	conn.close()
 
-	datesPerUser: dict[str, list[str]] = {}
-	for userId, day in rows:
-		datesPerUser.setdefault(userId, []).append(day)
+	datesByUser: dict[str, list[str]] = {}
+	tzByUser: dict[str, str] = {}
+	for userId, tzStr, day in rows:
+		datesByUser.setdefault(userId, []).append(day)
+		tzByUser[userId] = tzStr
 
-	data: list[tuple[str,int]] = []
-	for userId, dayList in datesPerUser.items():
-		best, lastDay, currentStreak, todayUtc = calculateStreak(dayList)
+	data: list[tuple[str, int]] = []
+	for userId, days in datesByUser.items():
+		tzInfo = ZoneInfo(tzByUser.get(userId, 'UTC'))
+		bestStreak, bestDay, currentStreak, todayLocal = calculateStreak(days, useTimezone=tzInfo)
+
 		name = await getUsername(userId, interaction)
-		if lastDay:
-			if todayUtc - lastDay < timedelta(days=1):
-				name = f"🔥 {name}"
-			else:
-				name = f"{name} ({currentStreak})"
 
-		data.append((name, best))
+		if current:
+			value = currentStreak
+			paren = f" ({bestStreak})" if bestStreak > currentStreak else ""
+			display = f"{name}{paren}"
+		else:
+			value = bestStreak
+			name = f" 🔥{name}" if currentStreak >= bestStreak else name
+			display = f"{name}"
+
+		data.append((display, value))
 
 	board = Leaderboard(interaction, title, data)
 	await board.start()

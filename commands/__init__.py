@@ -23,7 +23,7 @@ intents.members = True
 addGroup = app_commands.Group(name="add", description="Commands to add channels and admins")
 statGroup = app_commands.Group(name="stat", description="Commands to view statistics")
 leaderboardGroup = app_commands.Group(name="leaderboard", description="Commands to view leaderboards")
-updateChannelCommand = app_commands.Group(name="update", description="Command to update channels")
+updateGroup = app_commands.Group(name="update", description="Command to update channels")
 leaderboardGroup = app_commands.Group(name="leaderboard", description="Show leaderboard info")
 
 def printCommands(commandsList, indent=1):
@@ -41,7 +41,7 @@ class MyBot(commands.Bot):
 		loadCommandModules()
 
 		self.tree.add_command(addGroup)
-		self.tree.add_command(updateChannelCommand)
+		self.tree.add_command(updateGroup)
 		self.tree.add_command(statGroup)
 		self.tree.add_command(leaderboardGroup)
 

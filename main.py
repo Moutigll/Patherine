@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from utils.utils import log
 from database.db import createDb, connectDb
 
+# Need to be imported even if not called directly
 import events.messages
 import events.reactions
 
@@ -111,7 +112,6 @@ async def updateStatus():
 	)
 	try:
 		await bot.change_presence(status=discord.Status.online, activity=activity)
-		log(f"Updated status: {activity.name}")
 	except Exception as e:
 		log(f"Failed to update presence: {e}")
 

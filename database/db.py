@@ -15,7 +15,8 @@ def createDb():
 	cursor.execute("""
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		discord_user_id TEXT NOT NULL UNIQUE
+		discord_user_id TEXT NOT NULL UNIQUE,
+		timezone TEXT DEFAULT 'Europe/Paris'
 	);
 	""")
 
