@@ -275,3 +275,59 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 
 	board = Leaderboard(interaction, title, data)
 	await board.start()
+
+@leaderboardGroup.command(name="days", description="Top Participation Days – days with the most unique users sending a success message")
+@app_commands.describe(channel="Optional channel to analyze")
+async def participationDaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
+	"""Show the top 10 days by count of distinct users with a success message."""
+	await interaction.response.defer()
+	conn, cursor = connectDb()
+
+	if channel:
+		cursor.execute(
+			"SELECT id FROM channels WHERE discord_channel_id = ?",
+			(str(channel.id),)
+		)
+		row = cursor.fetchone()
+		if not row:
+			conn.close()
+			return await interaction.followup.send(
+				f"❌ {channel.mention} is not registered. Use `/add channel` first.",
+				ephemeral=True
+			)
+		chan_id = row[0]
+		title = f"📅 Top Participation Days for #{channel.name}"
+		cursor.execute(
+			"""
+			SELECT DATE(m.timestamp) as day, COUNT(DISTINCT m.user_id) as users_count
+			FROM messages m
+			WHERE m.category = 'success' AND m.channel_id = ?
+			GROUP BY day
+			ORDER BY users_count DESC
+			LIMIT 10
+			""",
+			(chan_id,)
+		)
+	else:
+		title = "📅 Top Participation Days (Global)"
+		cursor.execute(
+			"""
+			SELECT DATE(m.timestamp) as day, COUNT(DISTINCT m.user_id) as users_count
+			FROM messages m
+			WHERE m.category = 'success'
+			GROUP BY day
+			ORDER BY users_count DESC
+			LIMIT 10
+			"""
+		)
+
+	rows = cursor.fetchall()
+	conn.close()
+
+	data: list[tuple[str,int]] = []
+	for day, count in rows:
+		formatted = datetime.fromisoformat(day).strftime("%d %b, %Y")
+		data.append((formatted, count))
+
+	board = Leaderboard(interaction, title, data, itemsPerPage=10, sortReverse=True)
+	await board.start()

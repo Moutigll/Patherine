@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from commands import FOOTER_TEXT, statGroup
@@ -32,11 +32,21 @@ def calculateStreak(dateStrings: list[str], useTimezone=ZoneInfo('UTC')) -> tupl
 		else:
 			currentCount = 1
 
-	today = datetime.now(useTimezone).date()
-	currentStreak = currentCount if uniqueDays[-1] == today else 0
+	now = datetime.now(useTimezone)
+	today = now.date()
+
+	if not ( # We pass if...
+		today == uniqueDays[-1]  # Same day → keep streak
+		or (
+			today == uniqueDays[-1] + timedelta(days=1)  # Next day
+			and now.time() < time(12, 7)  # But still before 12:07
+		)
+	):
+		currentStreak = 0
+	else:
+		currentStreak = currentCount if uniqueDays[-1] in (today, today - timedelta(days=1)) else 0
 
 	return maxStreak, maxDay, currentStreak, today
-
 
 def calculateDelays(timestamps):
 	"""Returns the delay in seconds from the start of the minute for each timestamp."""
