@@ -1,6 +1,9 @@
 import discord
 from discord import app_commands
-from commands import bot
+from commands import bot, makeEmbed
+import commands
+from database import db
+from utils.utils import connectDb
 
 INVITE_PERMISSIONS = discord.Permissions()
 INVITE_PERMISSIONS.update(
@@ -38,6 +41,7 @@ async def helpCommand(interaction: discord.Interaction):
 			"```/help``` Affiche ce message\n"
 			"```/invite``` Donne le lien d'invitation du bot\n"
 			"```/timezone``` Configure votre fuseau horaire"
+			"```/untrack``` Le bot vous ignore"
 		),
 		inline=False
 	)
@@ -93,3 +97,64 @@ async def helpCommand(interaction: discord.Interaction):
 	)
 	
 	await interaction.response.send_message(embed=embed)
+
+
+class UntrackConfirm(discord.ui.View):
+	def __init__(self, discordUserId):
+		super().__init__(timeout=60)
+		self.discordUserId = discordUserId
+
+	@discord.ui.button(label="Confirm", style=discord.ButtonStyle.danger)
+	async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+		conn, cursor = connectDb()
+
+		cursor.execute("SELECT 1 FROM untracked_users WHERE discord_user_id=?", (str(self.discordUserId),))
+		if cursor.fetchone():
+			await interaction.response.edit_message(
+				content="⚠️ You are already untracked.", view=None
+			)
+			conn.close()
+			return
+
+		cursor.execute("SELECT id FROM users WHERE discord_user_id=?", (str(self.discordUserId),))
+		userRow = cursor.fetchone()
+		if not userRow:
+			await interaction.response.edit_message(
+				content="⚠️ You are not tracked in the database.", view=None
+			)
+			conn.close()
+			return
+		userId = userRow[0]
+
+		cursor.execute("SELECT COUNT(*) FROM messages WHERE user_id=?", (userId,))
+		messageCount = cursor.fetchone()[0]
+		cursor.execute("SELECT COUNT(*) FROM reactions WHERE user_id=?", (userId,))
+		reactionCount = cursor.fetchone()[0]
+
+		cursor.execute("DELETE FROM messages WHERE user_id=?", (userId,))
+		cursor.execute("DELETE FROM reactions WHERE user_id=?", (userId,))
+		cursor.execute("DELETE FROM users WHERE id=?", (userId,))
+
+		cursor.execute(
+			"INSERT OR IGNORE INTO untracked_users (discord_user_id) VALUES (?)",
+			(str(self.discordUserId),)
+		)
+
+		conn.commit()
+		conn.close()
+
+		await interaction.response.edit_message(
+			content=f"✅ Your data has been removed.\n**{messageCount} messages** and **{reactionCount} reactions** deleted.",
+			view=None
+		)
+
+@bot.tree.command(name="untrack", description="Makes the bot ignore all your messages")
+async def untrackCommand(interaction: discord.Interaction):
+	view = UntrackConfirm(interaction.user.id)
+	await interaction.response.send_message(
+		"⚠️ This action is **irreversible**.\n"
+		"Your messages and reactions will be deleted, and only your ID will be stored to ignore you.\n"
+		"Do you want to continue?",
+		ephemeral=True,
+		view=view
+	)

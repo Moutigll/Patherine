@@ -1,7 +1,7 @@
 import discord
 
 from commands import bot
-from commands.populateDb import getUserId
+from commands.populateDb import getUserId, isUserUntracked
 from utils.utils import connectDb, log
 
 
@@ -46,7 +46,12 @@ async def getReactionContext(payload):
 
 		messageId = msgRow[0]
 
-		userId = getUserId(conn, cursor, str(payload.user_id))
+		uidStr = str(payload.user_id)
+		if isUserUntracked(uidStr, cursor):
+			conn.close()
+			return None, None, None, None
+
+		userId = getUserId(conn, cursor, uidStr)
 
 		return conn, cursor, messageId, userId
 

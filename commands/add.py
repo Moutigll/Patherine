@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from commands import addGroup, makeEmbed, OWNER_ID
 from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
-from utils.utils import connectDb, timezoneAutocomplete
+from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
 @addGroup.command(name="admin", description="Add a user as admin (only OWNER can do that)")
 @app_commands.describe(user="User to add as admin")
@@ -71,10 +71,10 @@ async def addChannelCommand(
 
 	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name), embedMsg, addStart)
 
-	await embedMsg.edit(embed=makeEmbed("Fetching reactions...", "Looking through reactions 💜"))
+	await safeEmbed(interaction, embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"), message=embedMsg)
 
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 	summary = await generateSummary(cursor, internalId, stored, reacted)
 
-	await embedMsg.edit(embed=makeEmbed("✅ Done", summary))
+	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
 	conn.close()

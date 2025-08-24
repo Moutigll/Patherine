@@ -1,5 +1,5 @@
 import datetime
-from discord import Interaction
+import discord
 from discord.app_commands import Choice
 import importlib
 import os
@@ -64,7 +64,7 @@ def formatGitFooter(repoURL: str, commitHash: str) -> str:
 	else:
 		return "Unknown repository"
 
-async def timezoneAutocomplete(interaction: Interaction, current: str) -> list[Choice[str]]:
+async def timezoneAutocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
 	results = []
 	for tz in sorted(available_timezones()):
 		if current.lower() in tz.lower():
@@ -79,3 +79,25 @@ def escapeMarkdown(text: str) -> str:
 			   .replace("_", "\\_") \
 			   .replace("~", "\\~") \
 			   .replace("`", "\\`")
+
+async def safeEmbed(interaction: discord.Interaction, embed: discord.Embed, message: discord.Message | None = None) -> discord.Message:
+	"""
+	Try to edit an existing embed message, otherwise send a new one.
+	Always returns the final message object.
+	"""
+	try:
+		if message:
+			await message.edit(embed=embed)
+			return message
+		else:
+			# If we don't have a message yet, use followup
+			return await interaction.followup.send(embed=embed)
+	except discord.NotFound:
+		# The message was deleted → send a new one
+		return await interaction.followup.send(embed=embed)
+	except discord.Forbidden:
+		# Not allowed to edit → send a new one
+		return await interaction.followup.send(embed=embed)
+	except discord.HTTPException:
+		# Other error → fallback to new message
+		return await interaction.followup.send(embed=embed)

@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from commands import makeEmbed, updateGroup
 from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
-from utils.utils import connectDb, timezoneAutocomplete
+from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
 @updateGroup.command(name="channel", description="Update a channel with new messages and reactions")
 @app_commands.describe(channel="Channel to update")
@@ -29,11 +29,11 @@ async def updateChannelCommand(interaction: discord.Interaction, channel: discor
 
 	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName), embedMsg, addStart)
 
-	await embedMsg.edit(embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"))
+	await safeEmbed(interaction, embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"), message=embedMsg)
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 
 	summary = await generateSummary(cursor, internalId, stored, reacted)
-	await embedMsg.edit(embed=makeEmbed("✅ Done", summary))
+	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
 
 	conn.close()
 

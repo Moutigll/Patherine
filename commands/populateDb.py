@@ -21,6 +21,9 @@ def getCategoryFromTime(time):
 			return category
 	return None
 
+def isUserUntracked(userId, cursor):
+	cursor.execute("SELECT 1 FROM untracked_users WHERE discord_user_id = ?", (userId,))
+	return cursor.fetchone() is not None
 
 async def authorize(interaction: discord.Interaction) -> bool:
 	reqId = str(interaction.user.id)
@@ -60,6 +63,8 @@ async def fetchMessages(channel, internalChannelId, cursor, conn, tz, embedMsg, 
 			continue
 
 		uidStr = str(msg.author.id)
+		if isUserUntracked(uidStr, cursor):
+			continue
 		if uidStr not in userCache:
 			userCache[uidStr] = getUserId(conn, cursor, uidStr)
 
@@ -117,6 +122,8 @@ async def fetchReactions(channel, cursor, conn, messageMap):
 						continue
 
 					uidStr = str(user.id)
+					if isUserUntracked(uidStr, cursor):
+						continue
 					if uidStr not in userCache:
 						userCache[uidStr] = getUserId(conn, cursor, uidStr)
 

@@ -3,7 +3,7 @@ from datetime import timezone
 from zoneinfo import ZoneInfo
 
 from commands import bot
-from commands.populateDb import getCategoryFromTime, getUserId
+from commands.populateDb import getCategoryFromTime, getUserId, isUserUntracked
 from utils.utils import connectDb, log
 
 @bot.event
@@ -31,6 +31,9 @@ async def on_message(message: discord.Message):
 		return
 
 	uidStr = str(message.author.id)
+	if isUserUntracked(uidStr, cursor):
+		conn.close()
+		return
 	userId = getUserId(conn, cursor, uidStr)
 
 	dateStr = localDt.date().isoformat()
@@ -50,6 +53,8 @@ async def on_message(message: discord.Message):
 	conn.commit()
 
 	if category == "success":
+		if "cath" not in message.content.lower():
+			return
 		try:
 			await message.add_reaction("💜")
 		except discord.HTTPException:

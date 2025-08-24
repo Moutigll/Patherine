@@ -52,6 +52,13 @@ def createDb():
 	);
 	""")
 
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS untracked_users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		discord_user_id TEXT NOT NULL UNIQUE
+	);
+	""")
+
 	conn.commit()
 	conn.close()
 	print("Database created successfully.")
