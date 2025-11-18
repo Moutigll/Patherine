@@ -54,22 +54,30 @@ class Leaderboard(View):
 		await self.interaction.followup.send(embed=self.makeEmbed(), view=self)
 
 async def getUsername(userId: str, interaction: Interaction) -> str:
-	try:
-		member = interaction.guild.get_member(int(userId))
-		if member:
-			return member.display_name
-	except (ValueError, TypeError):
-		pass
+	member = None
+
+	if interaction.guild:
+		try:
+			member = interaction.guild.get_member(int(userId))
+		except (ValueError, TypeError):
+			pass
+
+	if member:
+		return member.display_name
+
 	user = interaction.client.get_user(int(userId))
 	if user:
 		return user.name
+
 	try:
 		user = await interaction.client.fetch_user(int(userId))
 		if user:
 			return user.name
 	except Exception:
 		pass
+
 	return f"Unknown ({userId})"
+
 
 @leaderboardGroup.command(name="messages", description="Top users by success messages")
 @app_commands.describe(channel="Optional channel to analyze")
