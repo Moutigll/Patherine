@@ -8,7 +8,7 @@ from utils.utils import connectDb, log
 
 @bot.event
 async def on_message(message: discord.Message):
-	if message.author.bot:
+	if message.author.bot or  not "cath" in message.content.lower():
 		return
 
 	conn, cursor = connectDb()
@@ -53,8 +53,6 @@ async def on_message(message: discord.Message):
 	conn.commit()
 
 	if category == "success":
-		if "cath" not in message.content.lower():
-			return
 		try:
 			await message.add_reaction("💜")
 		except discord.HTTPException:
