@@ -7,35 +7,80 @@ from commands import makeEmbed, updateGroup
 from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
 from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
-@updateGroup.command(name="channel", description="Update a channel with new messages and reactions")
-@app_commands.describe(channel="Channel to update")
-async def updateChannelCommand(interaction: discord.Interaction, channel: discord.TextChannel):
+@updateGroup.command(
+	name="channel",
+	description="Update a channel with new messages and reactions"
+)
+@app_commands.describe(
+	channel="Channel to update",
+	from_date="Optional: fetch messages starting from this date (YYYY-MM-DD HH:MM UTC)"
+)
+async def updateChannelCommand(
+	interaction: discord.Interaction,
+	channel: discord.TextChannel,
+	from_date: str = None
+):
 	if not await authorize(interaction):
 		return
 
 	conn, cursor = connectDb()
-	cursor.execute("SELECT id, timezone FROM channels WHERE discord_channel_id = ?", (str(channel.id),))
+	cursor.execute(
+		"SELECT id, timezone FROM channels WHERE discord_channel_id = ?",
+		(str(channel.id),)
+	)
 	row = cursor.fetchone()
 	if not row:
-		await interaction.response.send_message("❌ Channel not found, use /add_channel first", ephemeral=True)
+		await interaction.response.send_message(
+			"❌ Channel not found, use /add_channel first",
+			ephemeral=True
+		)
 		conn.close()
 		return
 
 	internalId, tzName = row
 
 	await interaction.response.defer()
-	embedMsg = await interaction.followup.send(embed=makeEmbed("Updating activity...", "Fetching new messages ⏳"))
+	embedMsg = await interaction.followup.send(
+		embed=makeEmbed("Updating activity...", "Fetching new messages ⏳")
+	)
 	addStart = datetime.now(timezone.utc)
 
-	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tzName), embedMsg, addStart)
+	# Convert from_date string to datetime if provided
+	fetchFrom = None
+	if from_date:
+		try:
+			# expect format "YYYY-MM-DD HH:MM"
+			fetchFrom = datetime.strptime(from_date, "%Y-%m-%d %H:%M")
+			# convert to UTC
+			fetchFrom = fetchFrom.replace(tzinfo=ZoneInfo(tzName)).astimezone(timezone.utc)
+		except Exception as e:
+			await interaction.followup.send(f"❌ Invalid from_date format: {e}", ephemeral=True)
+			conn.close()
+			return
 
-	await safeEmbed(interaction, embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"), message=embedMsg)
+	stored, msgMap = await fetchMessages(
+		channel,
+		internalId,
+		cursor,
+		conn,
+		ZoneInfo(tzName),
+		embedMsg,
+		addStart,
+		fromDate=fetchFrom
+	)
+
+	await safeEmbed(
+		interaction,
+		embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"),
+		message=embedMsg
+	)
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 
 	summary = await generateSummary(cursor, internalId, stored, reacted)
 	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
 
 	conn.close()
+
 
 
 @updateGroup.command(name="timezone", description="Update your timezone or create your user entry if missing")

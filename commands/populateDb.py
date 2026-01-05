@@ -47,13 +47,29 @@ def getUserId(conn, cursor, userId):
 	return cursor.lastrowid
 
 
-async def fetchMessages(channel, internalChannelId, cursor, conn, tz, embedMsg, startTime):
+async def fetchMessages(
+	channel,
+	internalChannelId,
+	cursor,
+	conn,
+	tz,
+	embedMsg,
+	startTime,
+	fromDate=None
+):
 	"""Fetch and store new messages, return map of success messages."""
 	stored = 0
 	messageMap = []
 	userCache = {}
 
-	async for msg in channel.history(limit=None, oldest_first=True):
+	historyKwargs = {
+			"oldest_first": True
+	}
+
+	if fromDate is not None:
+		historyKwargs["after"] = fromDate
+
+	async for msg in channel.history(**historyKwargs):
 		if "cath" not in msg.content.lower():
 			continue
 
@@ -86,7 +102,7 @@ async def fetchMessages(channel, internalChannelId, cursor, conn, tz, embedMsg, 
 			continue
 
 		cursor.execute(
-			"INSERT INTO messages (message_id, channel_id, user_id, timestamp, category) VALUES (?, ?, ?, ?, ?)",
+			"INSERT OR IGNORE INTO messages (message_id, channel_id, user_id, timestamp, category) VALUES (?, ?, ?, ?, ?)",
 			(str(msg.id), internalChannelId, userId, localDt, category)
 		)
 		conn.commit()
