@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from utils.utils import log
 from database.db import createDb, connectDb
+from database.migrations.migrate import runMigrations
 
 # Need to be imported even if not called directly
 import events.messages
@@ -16,6 +17,9 @@ TARGET_TIME = dtTime(12, 7, 0)
 
 createDb()
 log("Database initialized successfully.")
+
+runMigrations()
+log("Migrations applied successfully.")
 
 @bot.event
 async def on_ready():
