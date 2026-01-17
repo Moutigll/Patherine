@@ -69,6 +69,24 @@ def createDb():
 	);
 	""")
 
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS channel_streaks (
+		channel_id INTEGER PRIMARY KEY,
+		current_streak INTEGER NOT NULL DEFAULT 0,
+		max_streak INTEGER NOT NULL DEFAULT 0,
+		last_success_date DATE NOT NULL,
+		FOREIGN KEY(channel_id) REFERENCES channels(id) ON DELETE CASCADE
+	);
+	""")
+
+	cursor.execute("""
+	CREATE TABLE IF NOT EXISTS global_streak (
+		current_streak INTEGER NOT NULL DEFAULT 0,
+		max_streak INTEGER NOT NULL DEFAULT 0,
+		last_success_date DATE NOT NULL
+	);
+	""")
+
 	conn.commit()
 	conn.close()
 	print("Database created successfully.")
