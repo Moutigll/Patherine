@@ -4,7 +4,7 @@ from discord import app_commands
 from zoneinfo import ZoneInfo
 
 from commands import makeEmbed, updateGroup
-from commands.populateDb import authorize, fetchMessages, fetchReactions, generateSummary
+from commands.populateDb import authorize, batchUpdateStreaks, fetchMessages, fetchReactions, generateSummary
 from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
 @updateGroup.command(
@@ -69,6 +69,8 @@ async def updateChannelCommand(
 		fromDate=fetchFrom
 	)
 
+	(chCurr, chMax), (glCurr, glMax) = batchUpdateStreaks(cursor, conn, internalId, msgMap)
+
 	await safeEmbed(
 		interaction,
 		embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"),
@@ -76,7 +78,7 @@ async def updateChannelCommand(
 	)
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 
-	summary = await generateSummary(cursor, internalId, stored, reacted)
+	summary = await generateSummary(cursor, internalId, stored, reacted, (chCurr, chMax), (glCurr, glMax))
 	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
 
 	conn.close()
