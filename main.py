@@ -30,6 +30,65 @@ async def on_ready():
 	checkRolesRemoval.start()
 	updateStatus.start()
 
+lastChannelMilestone = {}
+lastGlobalMilestone = None
+
+async def checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, roleName=None):
+	"""
+	Check if today is a record day for the channel or global participation.
+	Returns a list of messages to send.
+	"""
+	messages = []
+
+	# --- Channel milestone ---
+	cursor.execute("""
+		SELECT COUNT(*) FROM messages
+		WHERE channel_id = ? AND category='success'
+		AND DATE(timestamp, 'localtime') = ?
+	""", (dbChannelId, todayDate))
+	todayCount = cursor.fetchone()[0]
+
+	cursor.execute("""
+		SELECT MAX(count) FROM (
+			SELECT COUNT(*) AS count, DATE(timestamp, 'localtime') AS day
+			FROM messages
+			WHERE channel_id = ? AND category='success'
+			GROUP BY day
+		)
+	""", (dbChannelId,))
+	maxCount = cursor.fetchone()[0] or 0
+
+	if todayCount >= maxCount and lastChannelMilestone.get(dbChannelId) != todayDate:
+		lastChannelMilestone[dbChannelId] = todayDate
+		messages.append(
+			f"🎉 Today is the most active day in {guild.name} - #{roleName or 'channel'} with {todayCount} caths!"
+		)
+
+	# --- Global milestone ---
+	cursor.execute("""
+		SELECT COUNT(*) FROM messages
+		WHERE category='success'
+		AND DATE(timestamp, 'localtime') = ?
+	""", (todayDate,))
+	globalToday = cursor.fetchone()[0]
+
+	cursor.execute("""
+		SELECT MAX(count) FROM (
+			SELECT COUNT(*) AS count, DATE(timestamp, 'localtime') AS day
+			FROM messages
+			WHERE category='success'
+			GROUP BY day
+		)
+	""")
+	globalMax = cursor.fetchone()[0] or 0
+
+	globalMessage = None
+	global lastGlobalMilestone
+	if globalToday >= globalMax and lastGlobalMilestone != todayDate:
+		lastGlobalMilestone = todayDate
+		globalMessage = f"🌐 Today is a record participation day globally with {globalToday} caths!"
+
+	return messages, globalMessage
 
 @tasks.loop(minutes=1)
 async def checkRolesRemoval():
@@ -96,7 +155,21 @@ async def checkRolesRemoval():
 					except discord.HTTPException as e:
 						log(f"HTTP error removing role: {e}")
 
-			conn.close()
+		# --- Check milestones ---
+		channelMessages, globalMessage = await checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, roleName=role.name)
+		conn.close()
+		channel = bot.get_channel(int(channelIdStr)) or await bot.fetch_channel(int(channelIdStr))
+		if not globalMessage and  channel:
+			for msg in channelMessages:
+				await channel.send(msg)
+		if globalMessage:
+			for chIdStr, _, _, _ in channelConfigs:
+				ch = bot.get_channel(int(chIdStr)) or await bot.fetch_channel(int(chIdStr))
+				if ch:
+					await ch.send(globalMessage)
+
+					
+
 
 @tasks.loop(minutes=5)
 async def updateStatus():
