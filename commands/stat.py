@@ -73,8 +73,8 @@ def calculateDelays(timestamps):
 	"""Returns the delay in seconds from the start of the minute for each timestamp."""
 	delays = [ts.second + ts.microsecond / 1_000_000 for ts in timestamps]
 	if not delays:
-		return 0, 0, 0
-	return min(delays), sum(delays) / len(delays), max(delays)
+		return 0, 0, 0, 0
+	return min(delays), sum(delays) / len(delays), max(delays), delays[-1]
 
 
 # -----------------------------
@@ -135,7 +135,7 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 			{streakWhere}
 		""", params)
 		timestamps = [datetime.fromisoformat(r[0]) for r in cursor.fetchall()]
-		minD, avgD, maxD = calculateDelays(timestamps)
+		minD, avgD, maxD, lastD = calculateDelays(timestamps)
 
 	finally:
 		conn.close()
@@ -157,7 +157,8 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 		value=(
 			f"min: {minD:.3f}\n"
 			f"avg: {avgD:.3f}\n"
-			f"max: {maxD:.3f}"
+			f"max: {maxD:.3f}\n"
+			f"last: {lastD:.3f}"
 		),
 		inline=False
 	)

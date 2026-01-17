@@ -252,8 +252,8 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 			cursor.execute(
 				"""
 				SELECT u.discord_user_id, u.timezone,
-				       COALESCE(us.current_streak, 0) AS current_streak,
-				       COALESCE(us.max_streak, 0) AS max_streak
+					   COALESCE(us.current_streak, 0) AS current_streak,
+					   COALESCE(us.max_streak, 0) AS max_streak
 				FROM user_streaks us
 				JOIN users u ON u.id = us.user_id
 				ORDER BY u.discord_user_id

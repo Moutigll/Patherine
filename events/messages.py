@@ -190,6 +190,7 @@ async def on_message(message: discord.Message):
 
 		roleIds = fetchUserRoleIds(cursor, userId)
 		await assignRoles(message.author, message.guild, roleIds)
+		await handleAchievements(conn, cursor, internalId, userId, tzName, message)
 
 	finally:
 		try:
