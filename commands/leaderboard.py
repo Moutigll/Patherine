@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 
 from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup
-from commands.stat import calculateStreak
 
 class Leaderboard(View):
 	def __init__(self, interaction: Interaction, title: str, data: list[tuple[str, int]], itemsPerPage: int = 10, timeout: float = 120.0, sortReverse: bool = True):
@@ -219,56 +218,57 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 	await interaction.response.defer()
 	conn, cursor = connectDb()
 
-	if channel:
-		cursor.execute(
-			"SELECT id FROM channels WHERE discord_channel_id = ?",
-			(str(channel.id),)
-		)
-		row = cursor.fetchone()
-		if not row:
-			conn.close()
-			await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
-			return
-		title = f"🔥 Streaks Leaderboard for #{channel.name}"
-		cursor.execute(
-			"""
-			SELECT u.discord_user_id, u.timezone, DATE(m.timestamp) AS day
-			FROM messages m
-			JOIN users u ON u.id = m.user_id
-			WHERE m.category = 'success' AND m.channel_id = ?
-			GROUP BY u.discord_user_id, u.timezone, day
-			ORDER BY u.discord_user_id, day
-			""",
-			(row[0],)
-		)
-	else:
-		title = "🔥 Streaks Leaderboard (Global)"
-		cursor.execute(
-			"""
-			SELECT u.discord_user_id, u.timezone, DATE(m.timestamp) AS day
-			FROM messages m
-			JOIN users u ON u.id = m.user_id
-			WHERE m.category = 'success'
-			GROUP BY u.discord_user_id, u.timezone, day
-			ORDER BY u.discord_user_id, day
-			"""
-		)
+	try:
+		if channel:
+			cursor.execute(
+				"SELECT id FROM channels WHERE discord_channel_id = ?",
+				(str(channel.id),)
+			)
+			row = cursor.fetchone()
+			if not row:
+				await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
+				return
 
-	rows = cursor.fetchall()
-	conn.close()
+			title = f"🔥 Streaks Leaderboard for #{channel.name}"
 
-	datesByUser: dict[str, list[str]] = {}
-	tzByUser: dict[str, str] = {}
-	for userId, tzStr, day in rows:
-		datesByUser.setdefault(userId, []).append(day)
-		tzByUser[userId] = tzStr
+			# get users who have success messages in that channel, join to user_streaks
+			cursor.execute(
+				"""
+				SELECT u.discord_user_id, u.timezone,
+					   COALESCE(us.current_streak, 0) AS current_streak,
+					   COALESCE(us.max_streak, 0) AS max_streak
+				FROM messages m
+				JOIN users u ON u.id = m.user_id
+				LEFT JOIN user_streaks us ON us.user_id = u.id
+				WHERE m.category = 'success' AND m.channel_id = ?
+				GROUP BY u.discord_user_id, u.timezone
+				ORDER BY u.discord_user_id
+				""",
+				(row[0],)
+			)
+		else:
+			# global: read all users from user_streaks (precomputed)
+			title = "🔥 Streaks Leaderboard (Global)"
+			cursor.execute(
+				"""
+				SELECT u.discord_user_id, u.timezone,
+				       COALESCE(us.current_streak, 0) AS current_streak,
+				       COALESCE(us.max_streak, 0) AS max_streak
+				FROM user_streaks us
+				JOIN users u ON u.id = us.user_id
+				ORDER BY u.discord_user_id
+				"""
+			)
 
+		rows = cursor.fetchall()
+	finally:
+		conn.close()
+
+	# rows: (discord_user_id, timezone, current_streak, max_streak)
 	data: list[tuple[str, int]] = []
-	for userId, days in datesByUser.items():
-		tzInfo = ZoneInfo(tzByUser.get(userId, 'UTC'))
-		bestStreak, bestDay, currentStreak, todayLocal = calculateStreak(days, useTimezone=tzInfo)
+	for discordId, tzStr, currentStreak, bestStreak in rows:
 
-		name = await getUsername(userId, interaction)
+		name = await getUsername(discordId, interaction)
 
 		if current:
 			value = currentStreak
@@ -276,13 +276,14 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 			display = f"{name}{paren}"
 		else:
 			value = bestStreak
-			name = f" 🔥{name}" if currentStreak >= bestStreak else name
+			name = f" 🔥 {name}" if currentStreak >= bestStreak else name
 			display = f"{name}"
 
 		data.append((display, value))
 
 	board = Leaderboard(interaction, title, data)
 	await board.start()
+
 
 @leaderboardGroup.command(name="days", description="Top Participation Days – days with the most unique users sending a success message")
 @app_commands.describe(channel="Optional channel to analyze")
