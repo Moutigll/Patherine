@@ -1,6 +1,5 @@
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
-from utils.utils import connectDb
 
 CHANNEL_DEFAULT_TZ = ZoneInfo("Europe/Paris")  # fallback if channel tz not found
 CUTOFF_TIME = time(12, 7) 

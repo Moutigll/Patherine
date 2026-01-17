@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from commands import bot
 
-from utils.utils import connectDb, log
+from utils.utils import log
 
 # -----------------------------
 # Config
@@ -23,9 +24,9 @@ FALLBACK_MESSAGE = "🎉 Congrats on hitting this milestone!"
 # Count helpers using precomputed tables
 # -----------------------------
 def getUserSuccessCount(cursor, userId: int) -> int:
-	"""Return total 'success' messages sent by a user from user_streaks."""
+	"""Return total 'success' messages sent by a user."""
 	cursor.execute(
-		"SELECT current_streak + max_streak - current_streak FROM user_streaks WHERE user_id = ?",
+		"SELECT COUNT(*) FROM messages WHERE user_id = ? AND category = 'success'",
 		(userId,)
 	)
 	row = cursor.fetchone()
@@ -33,9 +34,9 @@ def getUserSuccessCount(cursor, userId: int) -> int:
 
 
 def getChannelSuccessCount(cursor, channelId: int) -> int:
-	"""Return total 'success' messages in a channel from channel_streaks."""
+	"""Return total 'success' messages in a channel."""
 	cursor.execute(
-		"SELECT current_streak + max_streak - current_streak FROM channel_streaks WHERE channel_id = ?",
+		"SELECT COUNT(*) FROM messages WHERE channel_id = ? AND category = 'success'",
 		(channelId,)
 	)
 	row = cursor.fetchone()
@@ -43,8 +44,8 @@ def getChannelSuccessCount(cursor, channelId: int) -> int:
 
 
 def getTotalSuccessCount(cursor) -> int:
-	"""Return global total 'success' messages from global_streak."""
-	cursor.execute("SELECT current_streak + max_streak - current_streak FROM global_streak LIMIT 1")
+	"""Return global total 'success' messages."""
+	cursor.execute("SELECT COUNT(*) FROM messages WHERE category = 'success'")
 	row = cursor.fetchone()
 	return row[0] if row else 0
 
@@ -130,7 +131,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	channelCount = getChannelSuccessCount(cursor, internalId)
 	channelStreak = getChannelCurrentStreak(cursor, internalId)
 	totalCount = getTotalSuccessCount(cursor)
-	totalStreak = getGlobalCurrentStreak(cursor)  # idem, similaire pour global
+	totalStreak = getGlobalCurrentStreak(cursor)
 
 	# --- User milestones ---
 	if isMilestone(userCount) or isMilestone(userStreak):

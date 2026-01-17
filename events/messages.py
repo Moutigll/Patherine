@@ -1,10 +1,11 @@
 import discord
-from datetime import datetime, timezone
+from datetime import timezone
 from zoneinfo import ZoneInfo
 
 from commands import bot
 from commands.populateDb import getCategoryFromTime, getUserId, isUserUntracked
 from utils.utils import connectDb, log
+from events.achievements import handleAchievements
 
 DEFAULT_TZ = ZoneInfo("Europe/Paris")
 
@@ -38,10 +39,12 @@ def insertMessage(cursor, channelId: int, userId: int, messageId: str, timestamp
 def upsertStreak(cursor, table: str, messageDateIso: str, entityId: int | None = None):
 	"""
 	Insert or update streaks (user, channel, global):
-	- table: 'user_streaks', 'channel_streaks' ou 'global_streak'
+	- table: 'user_streaks', 'channel_streaks' or 'global_streak'
 	- entityId: user_id or channel_id, None for global_streak
 	- messageDateIso: date of the new success message (YYYY-MM-DD)
 	"""
+	if not table in ("user_streaks", "channel_streaks", "global_streak"):
+		raise ValueError("Invalid table name for upsertStreak")
 	if table == "global_streak":
 		# global table: single row
 		cursor.execute(f"""

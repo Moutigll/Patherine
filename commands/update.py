@@ -143,7 +143,7 @@ async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: 
 		totalStored += stored
 		totalReacted += reacted
 		summaryLines.append(
-			f"📌 {ch.guild.name if ch.guild else 'Unknown server'} - [{ch.name}]:\n\tstored {stored}, reacted {reacted}, channel streak ({chCurr}/{chMax}), global streak ({glCurr}/{glMax})"
+			f"📌 {ch.guild.name if ch.guild else 'Unknown server'} - [{ch.name}]:\n    stored {stored}, reacted {reacted}, channel streak ({chCurr}/{chMax}), global streak ({glCurr}/{glMax})"
 		)
 
 	conn.close()

@@ -159,7 +159,7 @@ async def checkRolesRemoval():
 		channelMessages, globalMessage = await checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, roleName=role.name)
 		conn.close()
 		channel = bot.get_channel(int(channelIdStr)) or await bot.fetch_channel(int(channelIdStr))
-		if not globalMessage and  channel:
+		if not globalMessage and channel:
 			for msg in channelMessages:
 				await channel.send(msg)
 		if globalMessage:
@@ -167,8 +167,6 @@ async def checkRolesRemoval():
 				ch = bot.get_channel(int(chIdStr)) or await bot.fetch_channel(int(chIdStr))
 				if ch:
 					await ch.send(globalMessage)
-
-					
 
 
 @tasks.loop(minutes=5)
