@@ -74,18 +74,39 @@ async def helpCommand(interaction: discord.Interaction):
 		),
 		inline=False
 	)
-	
+
+	embed.add_field(
+		name="📈 Graphiques (graph)",
+		value=(
+			"```/graph users [total:True/False] [points:int]```\n"
+			"  - Graphique de la participation des utilisateurs\n"
+			"  - `total` : Afficher le total cumulé (défaut=False)\n"
+			"  - `points` : Nombre maximum de points à afficher\n\n"
+			"```/graph messages [total:True/False] [points:int]```\n"
+			"  - Graphique du nombre de messages\n"
+			"  - `total` : Afficher le total cumulé (défaut=False)\n"
+			"  - `points` : Nombre maximum de points à afficher\n\n"
+			"```/graph streaks```\n"
+			"  - Graphique des séries de messages\n"
+		),
+		inline=False
+	)
+
 	embed.add_field(
 		name="⚙️ Commandes admin",
 		value=(
 			"```/add admin [utilisateur:@user]```\n"
 			"  - Ajoute un admin (OWNER only)\n\n"
+			"```/update all [from_date:<date>]```\n"
+			"  - Force la mise à jour de tous les salons (OWNER only)\n\n"
+			"  - `from_date` : Récupérer les messages depuis cette date (YYYY-MM-DD HH:MM UTC, max 10 jours)\n\n"
 			"```/add channel [salon:<#salon>] [role:@role] [tz_name:fuseau]```\n"
 			"  - Ajoute un salon à la base de données (ADMIN only)\n"
 			"  - `role` : Rôle associé (optionnel)\n"
 			"  - `tz_name` : Fuseau horaire (défaut=Europe/Paris)\n\n"
-			"```/update channel [salon:<#salon>]```\n"
+			"```/update channel [salon:<#salon>] [from_date:<date>]```\n"
 			"  - Force la mise à jour des données (ADMIN only)\n\n"
+			"  - `from_date` : Récupérer les messages depuis cette date (YYYY-MM-DD HH:MM UTC, max 10 jours)"
 		),
 		inline=False
 	)

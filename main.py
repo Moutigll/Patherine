@@ -33,7 +33,7 @@ async def on_ready():
 lastChannelMilestone = {}
 lastGlobalMilestone = None
 
-async def checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, roleName=None):
+async def checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, channelName=None):
 	"""
 	Check if today is a record day for the channel or global participation.
 	Returns a list of messages to send.
@@ -61,7 +61,7 @@ async def checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate
 	if todayCount >= maxCount and lastChannelMilestone.get(dbChannelId) != todayDate:
 		lastChannelMilestone[dbChannelId] = todayDate
 		messages.append(
-			f"🎉 Today is the most active day in {guild.name} - #{roleName or 'channel'} with {todayCount} caths!"
+			f"🎉 Today is the most active day in {guild.name} - #{channelName or 'channel'} with {todayCount} caths!"
 		)
 
 	# --- Global milestone ---
@@ -156,9 +156,11 @@ async def checkRolesRemoval():
 						log(f"HTTP error removing role: {e}")
 
 		# --- Check milestones ---
-		channelMessages, globalMessage = await checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, roleName=role.name)
-		conn.close()
 		channel = bot.get_channel(int(channelIdStr)) or await bot.fetch_channel(int(channelIdStr))
+		guild = channel.guild if channel else None
+		channelName = channel.name if channel else None
+		channelMessages, globalMessage = await checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, channelName=channelName)
+		conn.close()
 		if not globalMessage and channel:
 			for msg in channelMessages:
 				await channel.send(msg)

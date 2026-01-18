@@ -24,7 +24,7 @@ addGroup = app_commands.Group(name="add", description="Commands to add channels 
 statGroup = app_commands.Group(name="stat", description="Commands to view statistics")
 leaderboardGroup = app_commands.Group(name="leaderboard", description="Commands to view leaderboards")
 updateGroup = app_commands.Group(name="update", description="Command to update channels")
-leaderboardGroup = app_commands.Group(name="leaderboard", description="Show leaderboard info")
+graphGroup = app_commands.Group(name="graph", description="Commands to generate graphs")
 
 def printCommands(commandsList, indent=1):
 	for cmd in commandsList:
@@ -44,6 +44,7 @@ class MyBot(commands.Bot):
 		self.tree.add_command(updateGroup)
 		self.tree.add_command(statGroup)
 		self.tree.add_command(leaderboardGroup)
+		self.tree.add_command(graphGroup)
 
 		print("[DEBUG] Commands currently registered in bot.tree:")
 		for cmd in self.tree.get_commands():
