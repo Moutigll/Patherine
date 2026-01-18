@@ -123,15 +123,31 @@ def fetchUserRoleIds(cursor, userId: int) -> list[str]:
 	return [r[0] for r in cursor.fetchall() if r[0]]
 
 
-async def assignRoles(member: discord.Member, guild: discord.Guild, roleIds: list[str]):
-	"""Add roles to member if not already present."""
-	for roleId in roleIds:
-		try:
+async def assignRolesAcrossGuilds(member: discord.User, roleIds: list[str]):
+	"""
+	Assign roles to a user across all guilds.
+	- member: discord.User (can be in multiple guilds)
+	- roleIds: list of role IDs to assign (one per guild)
+	"""
+	for guild in bot.guilds:
+		# Check if the user is a member of this guild
+		guildMember = guild.get_member(member.id)
+		if not guildMember:
+			continue
+
+		rolesToAdd = []
+		for roleId in roleIds:
 			role = guild.get_role(int(roleId))
-			if role and role not in member.roles:
-				await member.add_roles(role, reason="Has rightfully worshipped Catherine!")
-		except Exception as e:
-			log(f"Failed to add role {roleId} to {member.id}: {e}")
+			if role and role not in guildMember.roles:
+				rolesToAdd.append(role)
+
+		# Add all roles in batch
+		if rolesToAdd:
+			try:
+				await guildMember.add_roles(*rolesToAdd, reason="Has rightfully worshipped Catherine!")
+				log(f"Added roles {[r.id for r in rolesToAdd]} to user {member.id} in guild {guild.name}")
+			except Exception as e:
+				log(f"Failed to add roles {[r.id for r in rolesToAdd]} in guild {guild.name} for user {member.id}: {e}")
 
 
 # --- Event handler ---
@@ -192,7 +208,7 @@ async def on_message(message: discord.Message):
 			pass
 
 		roleIds = fetchUserRoleIds(cursor, userId)
-		await assignRoles(message.author, message.guild, roleIds)
+		await assignRolesAcrossGuilds(message.author, roleIds)
 		await handleAchievements(conn, cursor, internalId, userId, tzName, message)
 
 	finally:
