@@ -20,6 +20,8 @@ MILESTONE_MESSAGES: dict[int, str] = {
 
 FALLBACK_MESSAGE = "🎉 Congrats on hitting this milestone!"
 
+todayMilestoneCache = {}
+
 # -----------------------------
 # Count helpers using precomputed tables
 # -----------------------------
@@ -104,7 +106,7 @@ def getGlobalCurrentStreak(cursor) -> int:
 
 def isMilestone(count: int) -> bool:
 	"""Return True if the count is a notable milestone."""
-	return count in NOTABLE_THRESHOLDS or count % 100 == 0
+	return count in NOTABLE_THRESHOLDS or (count % 100 == 0 and count != 0)
 
 
 def getMilestoneMessage(count: int) -> str:
@@ -125,6 +127,9 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	3. Global milestones → broadcast to all channels
 	"""
 
+	# Clean up cache for previous days
+	todayMilestoneCache = {k: v for k, v in todayMilestoneCache.items() if k[2] == today}
+
 	# Fetch counts and streaks
 	userCount = getUserSuccessCount(cursor, userId)
 	userStreak = getUserCurrentStreak(cursor, userId, tzName)
@@ -134,7 +139,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	totalStreak = getGlobalCurrentStreak(cursor)
 
 	# --- User milestones ---
-	if isMilestone(userCount) or isMilestone(userStreak):
+	if (isMilestone(userCount) or isMilestone(userStreak)) and (("user", userId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(userCount):
 			parts.append(f"You've sent cath **{userCount}** times!\n{getMilestoneMessage(userCount)}")
@@ -144,6 +149,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 				parts.append(getMilestoneMessage(userStreak))
 
 		content = f"Congratulations {message.author.mention}! {' — '.join(parts)}"
+		todayMilestoneCache[("user", userId, datetime.now().date())] = True
 		try:
 			await message.channel.send(content)
 		except Exception as e:
@@ -151,7 +157,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 		return
 
 	# --- Channel milestones (send only in this channel) ---
-	if isMilestone(channelCount) or isMilestone(channelStreak):
+	if (isMilestone(channelCount) or isMilestone(channelStreak)) and (("channel", internalId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(channelCount):
 			parts.append(f"Channel total of cath messages reached **{channelCount}** 🎊\n{getMilestoneMessage(channelCount)}")
@@ -161,6 +167,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 				parts.append(getMilestoneMessage(channelStreak))
 
 		content = " / ".join(parts)
+		todayMilestoneCache[("channel", internalId, datetime.now().date())] = True
 		try:
 			await message.channel.send(content)
 		except Exception as e:
@@ -168,7 +175,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 		return
 
 	# --- Global milestones (broadcast) ---
-	if isMilestone(totalCount) or isMilestone(totalStreak):
+	if (isMilestone(totalCount) or isMilestone(totalStreak)) and (("global", 0, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(totalCount):
 			parts.append(f"Global total of cath messages reached **{totalCount}** 🎊\n{getMilestoneMessage(totalCount)}")
@@ -179,6 +186,7 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 
 		content = " / ".join(parts)
 
+		todayMilestoneCache[("global", 0, datetime.now().date())] = True
 		cursor.execute("SELECT discord_channel_id FROM channels WHERE discord_channel_id IS NOT NULL")
 		rows = cursor.fetchall()
 
