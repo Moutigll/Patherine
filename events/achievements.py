@@ -126,9 +126,14 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	2. Channel milestones → same channel
 	3. Global milestones → broadcast to all channels
 	"""
+	global todayMilestoneCache
 
 	# Clean up cache for previous days
-	todayMilestoneCache = {k: v for k, v in todayMilestoneCache.items() if k[2] == today}
+	today = datetime.now().date()
+	todayMilestoneCache.update({
+		key: val for key, val in todayMilestoneCache.items()
+		if key[2] == today
+	})
 
 	# Fetch counts and streaks
 	userCount = getUserSuccessCount(cursor, userId)

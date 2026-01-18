@@ -156,10 +156,11 @@ async def checkRolesRemoval():
 						log(f"HTTP error removing role: {e}")
 
 		# --- Check milestones ---
-		channelName = (await bot.fetch_channel(int(channelIdStr))).name if channelIdStr else None
+		channel = bot.get_channel(int(channelIdStr)) or await bot.fetch_channel(int(channelIdStr))
+		guild = channel.guild if channel else None
+		channelName = channel.name if channel else None
 		channelMessages, globalMessage = await checkDailyParticipationMilestone(cursor, guild, dbChannelId, todayDate, channelName=channelName)
 		conn.close()
-		channel = bot.get_channel(int(channelIdStr)) or await bot.fetch_channel(int(channelIdStr))
 		if not globalMessage and channel:
 			for msg in channelMessages:
 				await channel.send(msg)

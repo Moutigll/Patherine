@@ -1,6 +1,6 @@
 import io
 import time
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Tuple
 
 import discord
@@ -244,8 +244,6 @@ async def graphMessagesCommand(interaction: discord.Interaction, total: bool = F
 #    Streaks Graph Command
 #-----------------------------
 
-from datetime import date, timedelta
-
 g_streakHistoryCache = {
 	"day": None,
 	"data": None
@@ -335,11 +333,11 @@ def plotStreaksToBuffer(usersData: List[dict]) -> io.BytesIO:
 			filtered_dates = [dates[0]]
 			filtered_values = [values[0]]
 
-			for i in range(1, len(dates)-1):
-				if dates[i] != dates[i-1] + timedelta(days=1) or dates[i] != dates[i+1] - timedelta(days=1):
-					filtered_dates.append(dates[i])
-					filtered_values.append(values[i])
-
+			if len(dates) > 2:
+				for i in range(1, len(dates)-1):
+					if dates[i] != dates[i-1] + timedelta(days=1) or dates[i] != dates[i+1] - timedelta(days=1):
+						filtered_dates.append(dates[i])
+						filtered_values.append(values[i])
 			filtered_dates.append(dates[-1])
 			filtered_values.append(values[-1])
 

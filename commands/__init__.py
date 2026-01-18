@@ -24,7 +24,6 @@ addGroup = app_commands.Group(name="add", description="Commands to add channels 
 statGroup = app_commands.Group(name="stat", description="Commands to view statistics")
 leaderboardGroup = app_commands.Group(name="leaderboard", description="Commands to view leaderboards")
 updateGroup = app_commands.Group(name="update", description="Command to update channels")
-leaderboardGroup = app_commands.Group(name="leaderboard", description="Show leaderboard info")
 graphGroup = app_commands.Group(name="graph", description="Commands to generate graphs")
 
 def printCommands(commandsList, indent=1):
