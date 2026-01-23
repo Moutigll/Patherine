@@ -4,6 +4,8 @@ from pathlib import Path
 from discord import app_commands, Locale
 from discord.app_commands import locale_str
 
+from utils.utils import connectDb
+
 LOCALES_PATH = Path("locales")
 DEFAULT_LOCALE = "en"
 
@@ -21,6 +23,15 @@ class I18n:
 	def getLocale(self, interaction):
 		locale = interaction.locale.value or DEFAULT_LOCALE
 		return locale.split("-")[0]
+	
+	def getChannelLocale(self, chanId):
+		conn, cursor = connectDb()
+		cursor.execute("SELECT lang FROM channels WHERE discord_channel_id = ?", (str(chanId),))
+		row = cursor.fetchone()
+		conn.close()
+		if row and row[0] in self.translations:
+			return row[0]
+		return DEFAULT_LOCALE
 
 	def t(self, locale, *keys):
 		data = self.translations.get(locale) or self.translations[DEFAULT_LOCALE]

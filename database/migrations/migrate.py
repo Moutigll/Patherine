@@ -6,6 +6,7 @@ MIGRATIONS = [
 	"001_create_user_streaks",
 	"002_backfill_user_streaks",
 	"003_backfill_channel_global_streaks",
+	"004_add_lang_channels"
 ]
 
 def runMigrations():

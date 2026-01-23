@@ -73,6 +73,16 @@ async def timezoneAutocomplete(interaction: discord.Interaction, current: str) -
 			break
 	return results
 
+async def languageAutocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
+	supported_languages = ["en", "fr"]
+	results = []
+	for lang in supported_languages:
+		if current.lower() in lang.lower():
+			results.append(Choice(name=lang, value=lang))
+		if len(results) >= 25:
+			break
+	return results
+
 def escapeMarkdown(text: str) -> str:
 	return text.replace("\\", "\\\\") \
 			   .replace("*", "\\*") \

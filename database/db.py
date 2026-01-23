@@ -8,7 +8,8 @@ def createDb():
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		discord_channel_id TEXT NOT NULL UNIQUE,
 		discord_role_id TEXT,
-		timezone TEXT DEFAULT 'Europe/Paris'
+		timezone TEXT DEFAULT 'Europe/Paris',
+		lang TEXT DEFAULT 'fr'
 	);
 	""")
 
