@@ -1,0 +1,14 @@
+{
+	"bot": {
+		"name": "Patherine",
+		"description": "Bot dedicated to celebrating Catherine de Medici every day at 12:06"
+	},
+
+	"commands": {
+		"invite": {
+			"name": "invite",
+			"description": "Show an invitation link for the bot",
+			"text": "Invite Patherine"
+		}
+	}
+}

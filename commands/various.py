@@ -3,6 +3,8 @@ from discord import app_commands
 from commands import bot, makeEmbed
 import commands
 from database import db
+
+from utils.i18n import i18n, locale_str
 from utils.utils import connectDb
 
 INVITE_PERMISSIONS = discord.Permissions()
@@ -14,11 +16,16 @@ INVITE_PERMISSIONS.update(
 	manage_roles=True
 )
 
-@bot.tree.command(name="invite", description="Get the bot invite link.")
+
+@bot.tree.command(
+	name="invite",
+	description=locale_str("commands.invite.description")
+)
 async def inviteCommand(interaction: discord.Interaction):
+	locale = i18n.getLocale(interaction)
 	client_id = bot.user.id
 	invite_url = discord.utils.oauth_url(client_id, permissions=INVITE_PERMISSIONS)
-	await interaction.response.send_message(f"💜 [Invite Patherine]({invite_url})", ephemeral=True)
+	await interaction.response.send_message(f"[{i18n.t(locale, 'commands', 'invite', 'text')}]({invite_url}) 💜", ephemeral=True)
 
 @bot.tree.command(name="help", description="Affiche les informations sur le bot et ses commandes")
 async def helpCommand(interaction: discord.Interaction):

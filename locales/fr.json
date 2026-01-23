@@ -1,0 +1,14 @@
+{
+	"bot": {
+		"name": "Patherine",
+		"description": "Bot dédié à célébrer Catherine de Médicis chaque jour à 12:06"
+	},
+
+	"commands": {
+		"invite": {
+			"name": "invite",
+			"description": "Affiche un lien d'invitation pour le bot",
+			"text": "Inviter Patherine"
+		}
+	}
+}
