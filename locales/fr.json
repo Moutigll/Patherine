@@ -224,6 +224,51 @@
 				"channel": "Salon optionnel à analyser"
 			},
 			"error": "n'est pas enregistré. Utilisez `/add channel` d'abord"
+		},
+		"stat": {
+			"days": "jours",
+			"cDays": " jours (actuels",
+			"messages": {
+				"m": "Messages",
+				"f": "Échecs",
+				"s": "Réussites",
+				"c": "Ratés"
+			},
+			"reactions": {
+				"m": "Réactions",
+				"given": "Données",
+				"received": "Reçues"
+			},
+			"streak": "Série",
+			"delays": {
+				"m": "Délai de réussite",
+				"min": "min",
+				"avg": "moy",
+				"max": "max",
+				"last": "dernier"
+			},
+			"global": {
+				"title": "Statistiques globales",
+				"description": "Statistiques globales pour tous les salons suivis"
+			},
+			"channel": {
+				"title": "Statistiques du salon",
+				"description": "Statistiques pour un salon spécifique",
+				"arg": {
+					"channel": "Le salon à analyser"
+				}
+			},
+			"me": {
+				"title": "Mes statistiques",
+				"description": "Vos statistiques personnelles sur tous les salons suivis"
+			},
+			"user": {
+				"title": "Statistiques pour",
+				"description": "Statistiques pour un utilisateur spécifique sur tous les salons suivis",
+				"arg": {
+					"user": "L’utilisateur à analyser"
+				}
+			}
 		}
 	},
 	"errors": {

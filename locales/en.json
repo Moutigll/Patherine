@@ -223,7 +223,53 @@
 				"channel": "Optional channel to analyze"
 			},
 			"error": "is not registered. Use `/add channel` first"
+		},
+		"stat": {
+			"days": "days",
+			"cDays": " days (current",
+			"messages": {
+				"m": "Messages",
+				"f": "Fails",
+				"s": "Successes",
+				"c": "Chokes"
+			},
+			"reactions": {
+				"m": "Reactions",
+				"given": "Given",
+				"received": "Received"
+			},
+			"streak": "Streak",
+			"delays": {
+				"m": "Success delay",
+				"min": "min",
+				"avg": "avg",
+				"max": "max",
+				"last": "last"
+			},
+			"global": {
+				"title": "Global Statistics",
+				"description": "Overall statistics for all tracked channels"
+			},
+			"channel": {
+				"title": "Channel Statistics for",
+				"description": "Statistics for a specific channel",
+				"arg": {
+					"channel": "The channel to analyze"
+				}
+			},
+			"me": {
+				"title": "My Statistics",
+				"description": "Your personal statistics across all tracked channels"
+			},
+			"user": {
+				"title": "Stats for",
+				"description": "Statistics for a specific user across all tracked channels",
+				"arg": {
+					"user": "The user to analyze"
+				}
+			}
 		}
+
 	},
 	"errors": {
 		"notAuthorized": "You are not authorized to perform this action"
