@@ -6,9 +6,89 @@
 
 	"commands": {
 		"invite": {
-			"name": "invite",
 			"description": "Affiche un lien d'invitation pour le bot",
-			"text": "Inviter Patherine"
+			"text": "Inviter"
+		},
+		"help": {
+			"description": "Affiche les informations sur le bot et ses commandes",
+			"argChannel": "salon:<#salon>",
+			"argUser": "utilisateur:<@utilisateur>",
+			"embed": {
+				"title": "Patherine - Aide",
+				"description": "Bot dédié à célébrer Catherine de Médicis chaque jour à 12:06",
+				"field1": {
+					"name": "But du bot",
+					"value1": "Rendre hommage à **Catherine de Médicis** pour avoir popularisé les pâtes en France/Europe.",
+					"value2": "Chaque jour à 12:06 dans le salon dédié, le bot vérifie les messages contenant `cath`."
+				},
+				"field2": {
+					"name": "Commandes principales",
+					"value1": "Affiche ce message",
+					"value2": "Donne le lien d'invitation du bot",
+					"value3": "Configure votre fuseau horaire",
+					"value4": "Le bot vous ignore"
+				},
+				"field3": {
+					"name": "Statistiques (stat)",
+					"value1": "Stats globales",
+					"value2": "Stats par utilisateur",
+					"value3": "Stats d'un salon spécifique",
+					"value4": "Vos stats personnelles",
+					"value5": "Stats d'un utilisateur spécifique"
+				},
+				"field4": {
+					"name": "Classements (leaderboard)",
+					"value1": "Classement des users avec le plus de caths (salon optionnel)",
+					"value2": "Classement du nombre de reaction données (salon optionnel)",
+					"value3": "Afficher les pires délais (défaut=False)",
+					"value4": "Afficher les moyennes (incompatible avec worst)",
+					"value5": "Afficher les séries en cours",
+					"value6": "Classement des jours avec le plus de messages cath"
+				},
+				"field5": {
+					"name": "Graphiques (graph)",
+					"value1": "Graphique de la participation des utilisateurs",
+					"value2": "Afficher le total cumulé (défaut=False)",
+					"value3": "Nombre maximum de points à afficher (défaut=50)",
+					"value4": "Graphique du nombre de messages",
+					"value5": "Afficher le total cumulé (défaut=False)",
+					"value6": "Nombre maximum de points à afficher (défaut=50)",
+					"value7": "Graphique des séries de messages"
+
+				},
+				"field6": {
+					"name": "Commandes admin",
+					"value1": "Ajoute un admin (OWNER only)",
+					"value2": "Force la mise à jour de tous les salons (OWNER only)",
+					"value3": "Récupérer les messages depuis cette date (YYYY-MM-DD HH:MM UTC, max 10 jours)",
+					"value4": "Ajoute un salon à la base de données (ADMIN only)",
+					"value5": "Rôle associé (optionnel)",
+					"value6": "Langue du salon (défaut=fr)",
+					"value7": "Fuseau horaire (défaut=Europe/Paris)",
+					"value8": "Force la mise à jour des données (ADMIN only)"
+				},
+				"field7": {
+					"name": "Support",
+					"value1": "Pour toute suggestion ou bug à propos du bot, remplissez une issue sur",
+					"value2": "Vous pouvez aussi me contacter directement sur Discord: @Moutig ou par mail"
+				}
+			}
+		},
+		"untrack": {
+			"description": "Fait en sorte que le bot ignore tous vos messages",
+			"confirmView": {
+				"button": "Confirmer",
+				"warning": "Cette action est **irréversible**",
+				"explanation": "Vos messages et reactions seront **supprimés**, et seul votre ID sera conservé pour vous ignorer",
+				"confirm": "Souhaitez-vous continuer"
+			},
+			"error1": "Vous êtes déjà ignoré par le bot.",
+			"error2": "Vous n'apparaissez pas dans la base de données",
+			"success": {
+				"part1": "Vos données ont été supprimées avec succès",
+				"part2": " messages** et",
+				"part3": " reactions** ont été supprimées"
+			}
 		}
 	}
 }

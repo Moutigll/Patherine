@@ -1,14 +1,93 @@
 {
 	"bot": {
 		"name": "Patherine",
-		"description": "Bot dedicated to celebrating Catherine de Medici every day at 12:06"
+		"description": "Bot dedicated to celebrating Catherine de' Medici every day at 12:06"
 	},
 
 	"commands": {
 		"invite": {
-			"name": "invite",
-			"description": "Show an invitation link for the bot",
-			"text": "Invite Patherine"
+			"description": "Display an invitation link for the bot",
+			"text": "Invite"
+		},
+		"help": {
+			"description": "Display information about the bot and its commands",
+			"argChannel": "channel:<#channel>",
+			"argUser": "user:<@user>",
+			"embed": {
+				"title": "Patherine - Help",
+				"description": "Bot dedicated to celebrating Catherine de' Medici every day at 12:06",
+				"field1": {
+					"name": "Bot purpose",
+					"value1": "Pay tribute to **Catherine de' Medici** for popularizing pasta in France/Europe.",
+					"value2": "Every day at 12:06 in the dedicated channel, the bot checks messages containing `cath`."
+				},
+				"field2": {
+					"name": "Main commands",
+					"value1": "Display this message",
+					"value2": "Provide the bot invitation link",
+					"value3": "Configure your time zone",
+					"value4": "The bot ignores you"
+				},
+				"field3": {
+					"name": "Statistics (stat)",
+					"value1": "Global statistics",
+					"value2": "Statistics per user",
+					"value3": "Statistics for a specific channel",
+					"value4": "Your personal statistics",
+					"value5": "Statistics for a specific user"
+				},
+				"field4": {
+					"name": "Leaderboards (leaderboard)",
+					"value1": "Ranking of users with the most caths (optional channel)",
+					"value2": "Ranking of reactions given (optional channel)",
+					"value3": "Show worst delays (default=False)",
+					"value4": "Show averages (incompatible with worst)",
+					"value5": "Show ongoing streaks",
+					"value6": "Ranking of days with the most cath messages"
+				},
+				"field5": {
+					"name": "Graphs (graph)",
+					"value1": "User participation graph",
+					"value2": "Show cumulative total (default=False)",
+					"value3": "Maximum number of points to display (default=50)",
+					"value4": "Message count graph",
+					"value5": "Show cumulative total (default=False)",
+					"value6": "Maximum number of points to display (default=50)",
+					"value7": "Message streak graph"
+				},
+				"field6": {
+					"name": "Admin commands",
+					"value1": "Add an admin (OWNER only)",
+					"value2": "Force update of all channels (OWNER only)",
+					"value3": "Fetch messages since this date (YYYY-MM-DD HH:MM UTC, max 10 days)",
+					"value4": "Add a channel to the database (ADMIN only)",
+					"value5": "Associated role (optional)",
+					"value6": "Channel language (default=en)",
+					"value7": "Time zone (default=Europe/Paris)",
+					"value8": "Force data update (ADMIN only)"
+				},
+				"field7": {
+					"name": "Support",
+					"value1": "For any suggestion or bug related to the bot, please open an issue on",
+					"value2": "You can also contact me directly on Discord: @Moutig or by email"
+				}
+			}
+		},
+		"untrack": {
+			"description": "Make the bot ignore all your messages",
+			"confirmView": {
+				"button": "Confirm",
+				"warning": "This action is **irreversible**",
+				"explanation": "Your messages and reactions will be **deleted**, and only your ID will be kept to ignore you",
+				"confirm": "Do you want to continue?"
+			},
+			"error1": "You are already ignored by the bot.",
+			"error2": "You do not appear in the database",
+			"success": {
+				"part1": "Your data has been successfully deleted",
+				"part2": " messages** and",
+				"part3": " reactions** have been removed"
+			}
 		}
 	}
 }

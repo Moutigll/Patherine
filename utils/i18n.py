@@ -33,14 +33,33 @@ class I18n:
 			return row[0]
 		return DEFAULT_LOCALE
 
-	def t(self, locale, *keys):
-		data = self.translations.get(locale) or self.translations[DEFAULT_LOCALE]
+	def t(self, locale: str, *keys) -> str:
+		# Support both:
+		# t("en", "commands.invite.description")
+		# t("en", "commands", "invite", "description")
 
-		for key in keys:
-			data = data.get(key)
-			if data is None:
-				return "MISSING_TRANSLATION"
-		return data
+		if len(keys) == 1 and isinstance(keys[0], str):
+			parts = keys[0].split(".")
+		else:
+			parts = keys
+
+		for loc in (locale, DEFAULT_LOCALE):
+			data = self.translations.get(loc)
+			if not data:
+				continue
+
+			current = data
+			for part in parts:
+				if not isinstance(current, dict):
+					current = None
+					break
+				current = current.get(part)
+
+			if isinstance(current, str):
+				return current
+
+		return ".".join(parts)
+
 
 	def localizations(self, *keys):
 		result = {}
@@ -67,7 +86,7 @@ class PatherineTranslator(app_commands.Translator):
 		loc = locale.value.split("-")[0]
 
 		# try with existing i18n
-		keys = string.message.split(".")  # if you pass "commands.help.description"
+		keys = string.message.split(".") # e.g., "command.add.channel.description" -> ["command", "add", "channel", "description"]
 		translated = i18n.t(loc, *keys)
 
 		if translated == "MISSING_TRANSLATION":
