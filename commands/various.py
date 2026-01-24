@@ -1,8 +1,5 @@
 import discord
-from discord import app_commands
-from commands import bot, makeEmbed
-import commands
-from database import db
+from commands import bot
 
 from utils.i18n import i18n, locale_str
 from utils.utils import connectDb

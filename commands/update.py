@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from commands import makeEmbed, updateGroup, OWNER_ID
 from commands.populateDb import authorize, batchUpdateStreaks, fetchMessages, fetchReactions, generateSummary
+from utils import i18n
 from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
 @updateGroup.command(
@@ -22,6 +23,8 @@ async def updateChannelCommand(
 ):
 	if not await authorize(interaction):
 		return
+
+	l = i18n.getLocale(interaction)
 
 	conn, cursor = connectDb()
 	cursor.execute(
@@ -78,7 +81,7 @@ async def updateChannelCommand(
 	)
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 
-	summary = await generateSummary(cursor, internalId, stored, reacted, (chCurr, chMax), (glCurr, glMax))
+	summary = await generateSummary(cursor, internalId, stored, reacted, l, (chCurr, chMax), (glCurr, glMax))
 	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
 
 	conn.close()

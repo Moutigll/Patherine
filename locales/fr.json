@@ -89,6 +89,61 @@
 				"part2": " messages** et",
 				"part3": " reactions** ont été supprimées"
 			}
+		},
+		"add": {
+			"admin": {
+				"description": "Ajouter un utilisateur comme administrateur (seul le PROPRIÉTAIRE peut le faire)",
+				"argUser": "Utilisateur à ajouter comme administrateur",
+				"reject": "Vous n'êtes pas autorisé à ajouter des administrateurs",
+				"alreadyAdmin": "est déjà un administrateur",
+				"success": "a été ajouté comme administrateur avec succès"
+			},
+			"channel": {
+				"description": "Ajouter un salon à la base de données (seul un ADMIN peut le faire)",
+				"arg": {
+					"channel": "salon à ajouter",
+					"role": "(Optionnel) Rôle à associer à ce salon",
+					"language": "(Optionnel) Langue du salon pour le bot (par défaut=fr)",
+					"timezone": "(Optionnel) Fuseau horaire à utiliser lors de la vérification des messages (par défaut=Europe/Paris)"
+				},
+				"errors": {
+					"alreadyExists": "est déjà enregistré. Veuillez utiliser",
+					"lang1": "Langue non supportée",
+					"lang2": "Les langues supportées sont :",
+					"tz": "Fuseau horaire invalide"
+				},
+				"embed1": {
+					"title": "Récupération de l'activité",
+					"desc": "Parcours de l'historique des messages"
+				},
+				"embed2": {
+					"title": "Mise à jour des réactions",
+					"desc": "Parcours de l'historique des réactions"
+				},
+				"Done": "Terminé"
+			}
+		}
+	},
+	"errors": {
+		"notAuthorized": "Vous n'êtes pas autorisé à effectuer cette action"
+	},
+	"dbSummary": {
+		"title": {
+			"p1": "Messages stockés",
+			"p2": "message(s). Réactions récupérées",
+			"p3": "réaction(s)."
+		},
+		"summary": {
+			"header": "Résumé",
+			"success": "Succès",
+			"unique": "Utilisateurs ayant réussi au moins une fois",
+			"reac": "Total des réactions"
+		},
+		"streaks": {
+			"cCurrent": "Salon actuel",
+			"cMax": "Salon max",
+			"gCurrent": "Global actuel",
+			"gMax": "Global max"
 		}
 	}
 }

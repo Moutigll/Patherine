@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import available_timezones
 
 from commands import OWNER_ID
+from utils.i18n import i18n
 from utils.utils import connectDb
 
 TIMEZONES = sorted(available_timezones())
@@ -27,12 +28,13 @@ def isUserUntracked(userId, cursor):
 
 async def authorize(interaction: discord.Interaction) -> bool:
 	reqId = str(interaction.user.id)
+	l = i18n.getLocale(interaction)
 	conn, cursor = connectDb()
 	cursor.execute("SELECT 1 FROM admins WHERE discord_user_id = ?", (reqId,))
 	isAdmin = cursor.fetchone() is not None
 	conn.close()
 	if not isAdmin and reqId != OWNER_ID:
-		await interaction.response.send_message("❌ You are not authorized to perform this action", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'errors.notAuthorized')}", ephemeral=True)
 		return False
 	return True
 
@@ -277,7 +279,7 @@ def batchUpdateStreaks(cursor, conn, internalChannelId, messageMap):
 	conn.commit()
 	return (channelCurrent, channelMax), (globalCurrent, globalMax)
 
-async def generateSummary(cursor, channelId, stored, reacted, chStreaks=None, glStreaks=None):
+async def generateSummary(cursor, channelId, stored, reacted, l, chStreaks=None, glStreaks=None):
 	cursor.execute("SELECT category,COUNT(*) FROM messages WHERE channel_id=? GROUP BY category", (channelId,))
 	counts={r[0]:r[1] for r in cursor.fetchall()}
 
@@ -290,16 +292,16 @@ async def generateSummary(cursor, channelId, stored, reacted, chStreaks=None, gl
 	totalReacts=cursor.fetchone()[0]
 
 	return (
-		f"Stored **{stored}** message(s). Fetched **{reacted}** reactions.\n\n"
-		"📊 Summary:\n"
+		f"{i18n.t(l, 'dbSummary.title.p1')} **{stored}** {i18n.t(l, 'dbSummary.title.p2')} **{reacted}** {i18n.t(l, 'dbSummary.title.p3')}\n\n"
+		f"📊 {i18n.t(l, 'dbSummary.summary.header')}:\n"
 		f"- Fail: {counts.get('fail',0)}\n"
-		f"- Success: {counts.get('success',0)}\n"
+		f"- {i18n.t(l, 'dbSummary.summary.success')}: {counts.get('success',0)}\n"
 		f"- Choke: {counts.get('choke',0)}\n"
-		f"- Unique success users: {successUsers}\n"
-		f"- Total reactions: {totalReacts}"
+		f"- {i18n.t(l, 'dbSummary.summary.unique')}: {successUsers}\n"
+		f"- {i18n.t(l, 'dbSummary.summary.reac')}: {totalReacts}"
 		f"\n\n🔥 Streaks:\n"
-		f"- Channel current: {chStreaks[0] or 0}\n"
-		f"- Channel max: {chStreaks[1] or 0}\n"
-		f"- Global current: {glStreaks[0] or 0}\n"
-		f"- Global max: {glStreaks[1] or 0}"
+		f"- {i18n.t(l, 'dbSummary.streaks.cCurrent')}: {chStreaks[0] or 0}\n"
+		f"- {i18n.t(l, 'dbSummary.streaks.cMax')}: {chStreaks[1] or 0}\n"
+		f"- {i18n.t(l, 'dbSummary.streaks.gCurrent')}: {glStreaks[0] or 0}\n"
+		f"- {i18n.t(l, 'dbSummary.streaks.gMax')}: {glStreaks[1] or 0}"
 	)

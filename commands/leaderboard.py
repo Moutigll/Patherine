@@ -2,8 +2,7 @@ import discord
 from discord import app_commands, Interaction
 from discord.ui import View, button, Button
 from math import ceil
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime
 
 from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup

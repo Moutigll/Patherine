@@ -88,6 +88,61 @@
 				"part2": " messages** and",
 				"part3": " reactions** have been removed"
 			}
+		},
+		"add": {
+			"admin": {
+				"description": "Add a user as admin (only OWNER can do that)",
+				"argUser": "User to add as admin",
+				"reject": "You are not authorized to add admins",
+				"alreadyAdmin": "is already an admin",
+				"success": "has been added as an admin successfully"
+			},
+			"channel": {
+				"description": "Add a channel to the database (only ADMIN can do that)",
+				"arg": {
+					"channel": "Channel to add",
+					"role": "(Optional) Role to associate with this channel",
+					"language": "(Optional) Channel language for the bot (default=fr)",
+					"timezone": "(Optional) Time zone to use when checking caths (default=Europe/Paris)"
+				},
+				"errors": {
+					"alreadyExists": "is already being tracked. Pls use",
+					"lang1": "Unsupported language",
+					"lang2": "Supported languages are:",
+					"tz": "Invalid timezone"
+				},
+				"embed1": {
+					"title": "Fetching activity",
+					"desc": "Looking through message history"
+				},
+				"embed2": {
+					"title": "Updating reactions",
+					"desc": "Looking through reactions history"
+				},
+				"Done": "Done"
+			}
+		}
+	},
+	"errors": {
+		"notAuthorized": "You are not authorized to perform this action"
+	},
+	"dbSummary": {
+		"title": {
+			"p1": "Stored",
+			"p2": "message(s). Fetched",
+			"p3": "reaction(s)."
+		},
+		"summary": {
+			"header": "Summary",
+			"success": "Success",
+			"unique": "Unique success users",
+			"reac": "Total reactions"
+		},
+		"streaks": {
+			"cCurrent": "Channel current",
+			"cMax": "Channel max",
+			"gCurrent": "Global current",
+			"gMax": "Global max"
 		}
 	}
 }
