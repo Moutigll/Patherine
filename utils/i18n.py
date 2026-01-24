@@ -24,13 +24,15 @@ class I18n:
 		locale = interaction.locale.value or DEFAULT_LOCALE
 		return locale.split("-")[0]
 	
-	def getChannelLocale(self, chanId):
+	def getChannelLocale(self, chanId, interaction=None):
 		conn, cursor = connectDb()
 		cursor.execute("SELECT lang FROM channels WHERE discord_channel_id = ?", (str(chanId),))
 		row = cursor.fetchone()
 		conn.close()
 		if row and row[0] in self.translations:
 			return row[0]
+		if interaction:
+			return self.getLocale(interaction)
 		return DEFAULT_LOCALE
 
 	def t(self, locale: str, *keys) -> str:

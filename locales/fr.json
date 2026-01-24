@@ -174,7 +174,56 @@
 			},
 			"descT1": "Total: ",
 			"descT2": "Quotidien: ",
-			"footer": "Généré dans"
+			"footer": "Généré en"
+		},
+		"lb": {
+			"embed": {
+				"noData": "Aucune donnée disponible",
+				"page": "Page",
+				"unknown": "Inconnu",
+				"prev": "Préc",
+				"next": "Suiv"
+			},
+			"messages": {
+				"description": "Top des utilisateurs par messages réussis",
+				"title": "Classement des messages pour",
+				"gtitle": "Classement des messages (Global)"
+			},
+			"reactions": {
+				"description": "Top des utilisateurs par réactions données",
+				"title": "Classement des réactions pour",
+				"gtitle": "Classement des réactions (Global)"
+			},
+			"delays": {
+				"description": "Meilleurs temps de réaction pour les messages réussis",
+				"arg": {
+					"worst": "Afficher les pires délais au lieu des meilleurs",
+					"avg": "Afficher les délais moyens des utilisateurs au lieu des meilleurs"
+				},
+				"title": "Classement des délais pour",
+				"gtitle": "Classement des délais (Global)",
+				"worst": "Pires",
+				"avg": "Moyenne",
+				"best": "Meilleurs",
+				"error": "Vous ne pouvez pas utiliser les options 'worst' et 'avg' en même temps"
+			},
+			"streaks": {
+				"description": "Top des utilisateurs par plus longues séries de messages",
+				"arg": {
+					"current": "Afficher la série actuelle au lieu de la meilleure série"
+				},
+				"title": "Classement des séries pour",
+				"gtitle": "Classement des séries (Global)"
+			},
+			"days": {
+				"description": "Meilleurs jours de participation – jours avec le plus d'utilisateurs uniques envoyant un cath",
+				"title": "Meilleurs jours de participation pour",
+				"gtitle": "Meilleurs jours de participation (Global)"
+			},
+			"arg": {
+				"channel": "Salon optionnel à analyser"
+			},
+			"error": "n'est pas enregistré. Utilisez `/add channel` d'abord"
 		}
 	},
 	"errors": {

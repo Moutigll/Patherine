@@ -81,7 +81,7 @@ def makeGraphEmbed(title: str, description: str, filename: str, elapsed_seconds:
 	"""
 	embed = makeEmbed(title=title, description=description)
 	embed.set_image(url=f"attachment://{filename}")
-	embed.set_footer(text=f"{i18n.t(l, 'commands.graph.users.footer')} {elapsed_seconds:.2f} s")
+	embed.set_footer(text=f"{i18n.t(l, 'commands.graph.footer')} {elapsed_seconds:.2f}s")
 	return embed
 
 
