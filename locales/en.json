@@ -121,6 +121,59 @@
 				},
 				"Done": "Done"
 			}
+		},
+		"graph": {
+			"users": {
+				"description": "Show a graph of user participation over time",
+				"arg": {
+					"total": "Show total (cumulative) users instead of daily unique users",
+					"points": "Maximum number of points to display (between 10 and 200)"
+				},
+				"title1": "Total User Participation",
+				"title2": "Daily User Participation",
+				"xLabel": "Date",
+				"yLabel": "Number of Users",
+				"embed": {
+					"title": "User Participation Graph",
+					"desc": "user participation over time"
+				}
+			},
+			"messages": {
+				"description": "Show a graph of messages sent over time",
+				"arg": {
+					"total": "Show total (cumulative) messages instead of daily counts",
+					"points": "Maximum number of points to display (between 10 and 200)"
+				},
+				"title1": "Total Messages Sent",
+				"title2": "Daily Messages Sent",
+				"xLabel": "Date",
+				"yLabel": "Number of Messages",
+				"embed": {
+					"title": "Messages Graph",
+					"desc": "messages over time"
+				}
+			},
+			"streaks": {
+				"description": "Show a graph of message streaks for top users",
+				"title": "Best Streak Progression (Top 10 Users)",
+				"xLabel": "Date",
+				"yLabel": "Best streak achieved",
+				"embed": {
+					"title": "Best Streak Progression",
+					"desc": "Top 10 users by max streak – progression of record streaks over time"
+				},
+				"errors": {
+					"noData": "No streak data available."
+				}
+			},
+			"errors": {
+				"points": "Points must be between",
+				"points2": "and",
+				"noData": "Not enough data to generate the graph"
+			},
+			"descT1": "Total",
+			"descT2": "Daily",
+			"footer": "Generated in"
 		}
 	},
 	"errors": {

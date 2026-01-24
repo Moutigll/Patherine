@@ -122,6 +122,59 @@
 				},
 				"Done": "Terminé"
 			}
+		},
+		"graph": {
+			"users": {
+				"description": "Afficher un graphique de la participation des utilisateurs au fil du temps",
+				"arg": {
+					"total": "Afficher le total (cumulatif) des utilisateurs au lieu des utilisateurs uniques quotidiens",
+					"points": "Nombre maximum de points à afficher (entre 10 et 200)"
+				},
+				"title1": "Participation totale des utilisateurs",
+				"title2": "Participation quotidienne des utilisateurs",
+				"xLabel": "Date",
+				"yLabel": "Nombre d'utilisateurs",
+				"embed": {
+					"title": "Graphique de participation des utilisateurs",
+					"desc": "participation des utilisateurs au fil du temps"
+				}
+			},
+			"messages": {
+				"description": "Afficher un graphique des messages envoyés au fil du temps",
+				"arg": {
+					"total": "Afficher le total (cumulatif) des messages au lieu des comptes quotidiens",
+					"points": "Nombre maximum de points à afficher (entre 10 et 200)"
+				},
+				"title1": "Total des messages envoyés",
+				"title2": "Messages envoyés quotidiennement",
+				"xLabel": "Date",
+				"yLabel": "Nombre de messages",
+				"embed": {
+					"title": "Graphique des messages",
+					"desc": "messages au fil du temps"
+				}
+			},
+			"streaks": {
+				"description": "Afficher un graphique des séries de messages pour les meilleurs utilisateurs",
+				"title": "Progression des meilleures séries (Top 10 utilisateurs)",
+				"xLabel": "Date",
+				"yLabel": "Meilleure série atteinte",
+				"embed": {
+					"title": "Progression des meilleures séries",
+					"desc": "Top 10 des utilisateurs par série maximale – progression des séries record au fil du temps"
+				},
+				"errors": {
+					"noData": "Aucune donnée de série disponible."
+				}
+			},
+			"errors": {
+				"points": "Les points doivent être compris entre",
+				"points2": "et",
+				"noData": "Pas assez de données pour générer le graphique"
+			},
+			"descT1": "Total: ",
+			"descT2": "Quotidien: ",
+			"footer": "Généré dans"
 		}
 	},
 	"errors": {
