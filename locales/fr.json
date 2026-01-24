@@ -269,6 +269,61 @@
 					"user": "L’utilisateur à analyser"
 				}
 			}
+		},
+		"update": {
+			"channel": {
+				"description": "Mettre à jour un salon avec les derniers messages et réactions (seuls les ADMIN peuvent le faire)",
+				"arg": {
+					"channel": "Salon à mettre à jour"
+				},
+				"embed1": {
+					"title": "Mise à jour de l’activité",
+					"desc": "Récupération des nouveaux messages"
+				},
+				"embed2": {
+					"title": "Mise à jour des réactions",
+					"desc": "Analyse des nouvelles réactions"
+				}
+			},
+			"all": {
+				"description": "Mettre à jour tous les salons avec les nouveaux messages et réactions (seul le OWNER peut le faire)",
+				"errors": {
+					"notOwner": "Seul le propriétaire du bot peut exécuter cette commande",
+					"noChannels": "Aucun salon enregistré",
+					"dateLimit": "from_date ne peut pas dater de plus de 10 jours",
+					"noChId": "Impossible de récupérer l’identifiant du salon"
+				},
+				"embed": {
+					"title": "Mise à jour de tous les salons",
+					"desc": "Récupération des messages depuis"
+				},
+				"guildSummary": {
+					"unknown": "Serveur inconnu",
+					"p1": "enregistrés",
+					"p2": "réagis",
+					"p3": "série du salon",
+					"p4": "série globale"
+				},
+				"success": "Tous les salons ont été mis à jour"
+			},
+			"timezone": {
+				"description": "Mettre à jour votre fuseau horaire ou créer votre entrée utilisateur si absente",
+				"arg": {
+					"timezone": "Votre fuseau horaire (ex. Europe/Paris)"
+				},
+				"errors": {
+					"invalid": "Fuseau horaire invalide"
+				},
+				"success": "Votre fuseau horaire a été mis à jour vers",
+				"created": "Utilisateur créé avec le fuseau horaire"
+			},
+			"arg": {
+				"date": "(Optionnel) récupérer les messages à partir de cette date (YYYY-MM-DD HH:MM UTC)"
+			},
+			"errors": {
+				"notFound": "Salon introuvable, utilisez /add_channel d’abord",
+				"date": "Format de date invalide. Veuillez utiliser YYYY-MM-DD HH:MM UTC"
+			}
 		}
 	},
 	"errors": {

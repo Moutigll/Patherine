@@ -5,16 +5,16 @@ from zoneinfo import ZoneInfo
 
 from commands import makeEmbed, updateGroup, OWNER_ID
 from commands.populateDb import authorize, batchUpdateStreaks, fetchMessages, fetchReactions, generateSummary
-from utils import i18n
+from utils.i18n import i18n, locale_str
 from utils.utils import connectDb, timezoneAutocomplete, safeEmbed
 
 @updateGroup.command(
 	name="channel",
-	description="Update a channel with new messages and reactions"
+	description=locale_str("commands.update.channel.description")
 )
 @app_commands.describe(
-	channel="Channel to update",
-	from_date="Optional: fetch messages starting from this date (YYYY-MM-DD HH:MM UTC)"
+	channel=locale_str("commands.update.channel.arg.channel"),
+	from_date=locale_str("commands.update.arg.date")
 )
 async def updateChannelCommand(
 	interaction: discord.Interaction,
@@ -34,7 +34,7 @@ async def updateChannelCommand(
 	row = cursor.fetchone()
 	if not row:
 		await interaction.response.send_message(
-			"❌ Channel not found, use /add_channel first",
+			f"❌ {i18n.t(l, 'commands.update.errors.notFound')}",
 			ephemeral=True
 		)
 		conn.close()
@@ -44,7 +44,7 @@ async def updateChannelCommand(
 
 	await interaction.response.defer()
 	embedMsg = await interaction.followup.send(
-		embed=makeEmbed("Updating activity...", "Fetching new messages ⏳")
+		embed=makeEmbed(f"{i18n.t(l, 'commands.update.channel.embed1.title')}...", f"{i18n.t(l, 'commands.update.channel.embed1.desc')} ⏳")
 	)
 	addStart = datetime.now(timezone.utc)
 
@@ -57,7 +57,7 @@ async def updateChannelCommand(
 			# convert to UTC
 			fetchFrom = fetchFrom.replace(tzinfo=ZoneInfo(tzName)).astimezone(timezone.utc)
 		except Exception as e:
-			await interaction.followup.send(f"❌ Invalid from_date format: {e}", ephemeral=True)
+			await interaction.followup.send(f"❌ {i18n.t(l, 'commands.update.errors.date')}: {e}", ephemeral=True)
 			conn.close()
 			return
 
@@ -76,28 +76,29 @@ async def updateChannelCommand(
 
 	await safeEmbed(
 		interaction,
-		embed=makeEmbed("Updating reactions...", "Looking through new reactions 💜"),
+		embed=makeEmbed(f"{i18n.t(l, 'commands.update.channel.embed2.title')}...", f"{i18n.t(l, 'commands.update.channel.embed2.desc')} 💜"),
 		message=embedMsg
 	)
 	reacted = await fetchReactions(channel, cursor, conn, msgMap)
 
 	summary = await generateSummary(cursor, internalId, stored, reacted, l, (chCurr, chMax), (glCurr, glMax))
-	await safeEmbed(interaction, embed=makeEmbed("✅ Done", summary), message=embedMsg)
+	await safeEmbed(interaction, embed=makeEmbed(f"✅ {i18n.t(l, 'commands.add.channel.Done')}", summary), message=embedMsg)
 
 	conn.close()
 
 
 @updateGroup.command(
 	name="all",
-	description="Update all channels with new messages and reactions (OWNER only)"
+	description=locale_str("commands.update.all.description")
 )
 @app_commands.describe(
-	from_date="Fetch messages starting from this date (YYYY-MM-DD HH:MM UTC, max 10 days ago)"
+	from_date=locale_str("commands.update.arg.date")
 )
 async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: str):
+	l = i18n.getLocale(interaction)
 	# Check owner
 	if str(interaction.user.id) != OWNER_ID:
-		await interaction.response.send_message("❌ Only the bot owner can execute this command", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.update.all.errors.notOwner')}", ephemeral=True)
 		return
 
 	# Parse from_date
@@ -105,12 +106,12 @@ async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: 
 		fetchFrom = datetime.strptime(from_date, "%Y-%m-%d %H:%M")
 		fetchFrom = fetchFrom.replace(tzinfo=timezone.utc)
 	except Exception as e:
-		await interaction.response.send_message(f"❌ Invalid from_date format: {e}", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.update.errors.date')}: {e}", ephemeral=True)
 		return
 
 	# Limit: max 10 days ago
 	if (datetime.now(timezone.utc) - fetchFrom).days > 10:
-		await interaction.response.send_message("❌ from_date cannot be more than 10 days ago", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.update.all.errors.dateLimit')}", ephemeral=True)
 		return
 
 	await interaction.response.defer()
@@ -119,11 +120,11 @@ async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: 
 	cursor.execute("SELECT id, discord_channel_id, timezone FROM channels")
 	channels = cursor.fetchall()
 	if not channels:
-		await interaction.followup.send("❌ No channels registered", ephemeral=True)
+		await interaction.followup.send(f"❌ {i18n.t(l, 'commands.update.all.errors.noChannels')}", ephemeral=True)
 		conn.close()
 		return
 
-	embedMsg = await interaction.followup.send(embed=makeEmbed("Updating all channels...", f"Fetching messages since {from_date} ⏳"))
+	embedMsg = await interaction.followup.send(embed=makeEmbed(f"{i18n.t(l, 'commands.update.all.embed.title')}...", f"{i18n.t(l, 'commands.update.all.embed.desc')} {from_date}⏳"))
 
 	totalStored = 0
 	totalReacted = 0
@@ -135,7 +136,7 @@ async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: 
 			try:
 				ch = await interaction.client.fetch_channel(int(discordId))
 			except Exception:
-				summaryLines.append(f"⚠️ Failed to fetch channel ID {discordId}")
+				summaryLines.append(f"⚠️ {i18n.t(l, 'commands.update.all.errors.noChId')} {discordId}")
 				continue
 
 
@@ -146,21 +147,28 @@ async def updateAllChannelsCommand(interaction: discord.Interaction, from_date: 
 		totalStored += stored
 		totalReacted += reacted
 		summaryLines.append(
-			f"📌 {ch.guild.name if ch.guild else 'Unknown server'} - [{ch.name}]:\n    stored {stored}, reacted {reacted}, channel streak ({chCurr}/{chMax}), global streak ({glCurr}/{glMax})"
+			f"📌 {ch.guild.name if ch.guild else i18n.t(l, 'commands.update.all.guildSummary.unknown')} - [{ch.name}]:\n    {i18n.t(l, 'commands.update.all.guildSummary.p1')} {stored}, {i18n.t(l, 'commands.update.all.guildSummary.p2')} {reacted}, {i18n.t(l, 'commands.update.all.guildSummary.p3')} ({chCurr}/{chMax}), {i18n.t(l, 'commands.update.all.guildSummary.p4')} ({glCurr}/{glMax})"
 		)
 
 	conn.close()
-	await safeEmbed(interaction, embed=makeEmbed("✅ All channels updated", "\n".join(summaryLines)), message=embedMsg)
+	await safeEmbed(interaction, embed=makeEmbed(f"✅ {i18n.t(l, 'commands.update.all.success')}", "\n".join(summaryLines)), message=embedMsg)
 
 
-@updateGroup.command(name="timezone", description="Update your timezone or create your user entry if missing")
-@app_commands.describe(tz="Timezone like Europe/Paris")
+@updateGroup.command(
+	name="timezone",
+	description=locale_str("commands.update.timezone.description")
+)
+@app_commands.describe(
+	tz=locale_str("commands.update.timezone.arg.timezone")
+)
 @app_commands.autocomplete(tz=timezoneAutocomplete)
 async def updateTimezoneCommand(interaction: discord.Interaction, tz: str):
+	l = i18n.getLocale(interaction)
+	# Validate timezone
 	try:
 		zoneinfo = ZoneInfo(tz)
 	except Exception:
-		await interaction.response.send_message(f"❌ Invalid timezone: `{tz}`", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.update.timezone.errors.invalid')}: `{tz}`", ephemeral=True)
 		return
 
 	conn, cursor = connectDb()
@@ -171,10 +179,10 @@ async def updateTimezoneCommand(interaction: discord.Interaction, tz: str):
 
 	if row:
 		cursor.execute("UPDATE users SET timezone = ? WHERE discord_user_id = ?", (tz, discordUserId))
-		msg = f"✅ Timezone updated to `{tz}`"
+		msg = f"✅ {i18n.t(l, 'commands.update.timezone.success')} `{tz}`"
 	else:
 		cursor.execute("INSERT INTO users (discord_user_id, timezone) VALUES (?, ?)", (discordUserId, tz))
-		msg = f"✅ User created with timezone `{tz}`"
+		msg = f"✅ {i18n.t(l, 'commands.update.timezone.created')} `{tz}`"
 
 	conn.commit()
 	conn.close()

@@ -268,8 +268,62 @@
 					"user": "The user to analyze"
 				}
 			}
+		},
+		"update": {
+			"channel": {
+				"description": "Update a channel with the latest messages and reactions (only ADMIN can do that)",
+				"arg": {
+					"channel": "Channel to update"
+				},
+				"embed1": {
+					"title": "Updating activity",
+					"desc": "Fetching new messages"
+				},
+				"embed2": {
+					"title": "Updating reactions",
+					"desc": "Looking through new reactions"
+				}
+			},
+			"all": {
+				"description": "Update all channels with new messages and reactions (only OWNER can do that)",
+				"errors": {
+					"notOwner": "Only the bot owner can execute this command",
+					"noChannels": "No channels registered",
+					"dateLimit": "from_date cannot be more than 10 days ago",
+					"noChId": "Failed to fetch channel ID"
+				},
+				"embed": {
+					"title": "Updating all channels",
+					"desc": "Fetching messages since"
+				},
+				"guildSummary": {
+					"unknown": "Unknown server",
+					"p1": "stored",
+					"p2": "reacted",
+					"p3": "channel streak",
+					"p4": "global streak"
+				},
+				"success": "All channels updated"
+			},
+			"timezone": {
+				"description": "Update your timezone or create your user entry if missing",
+				"arg": {
+					"timezone": "Your timezone (e.g., Europe/Paris)"
+				},
+				"errors": {
+					"invalid": "Invalid timezone"
+				},
+				"success": "Your timezone has been updated to",
+				"created": "User created with timezone"
+			},
+			"arg": {
+				"date": "(Optional) fetch messages starting from this date (YYYY-MM-DD HH:MM UTC)"
+			},
+			"errors": {
+				"notFound": "Channel not found, use /add_channel first",
+				"date": "Invalid date format. Please use YYYY-MM-DD HH:MM UTC"
+			}
 		}
-
 	},
 	"errors": {
 		"notAuthorized": "You are not authorized to perform this action"
