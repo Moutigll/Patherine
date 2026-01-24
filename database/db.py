@@ -82,6 +82,7 @@ def createDb():
 
 	cursor.execute("""
 	CREATE TABLE IF NOT EXISTS global_streak (
+		id INTEGER PRIMARY KEY CHECK (id = 1),
 		current_streak INTEGER NOT NULL DEFAULT 0,
 		max_streak INTEGER NOT NULL DEFAULT 0,
 		last_success_date DATE NOT NULL
