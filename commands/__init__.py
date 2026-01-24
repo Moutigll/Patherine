@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
 
+from utils.i18n import PatherineTranslator
 from utils.utils import log, loadCommandModules, getGitInfo, formatGitFooter
 
 load_dotenv()
@@ -51,6 +52,9 @@ class MyBot(commands.Bot):
 			print(f"- {cmd.name}")
 			if hasattr(cmd, "commands") and cmd.commands:
 				printCommands(cmd.commands)
+
+		await self.tree.set_translator(PatherineTranslator())
+		print("[DEBUG] Translator set for app commands.")
 
 		if not self.synced:
 			await self.tree.sync()

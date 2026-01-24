@@ -2,24 +2,33 @@ import discord
 from discord import app_commands, Interaction
 from discord.ui import View, button, Button
 from math import ceil
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime
 
+from utils.i18n import i18n, locale_str
 from utils.utils import connectDb, escapeMarkdown
 from commands import FOOTER_TEXT, leaderboardGroup
 
 class Leaderboard(View):
 	def __init__(self, interaction: Interaction, title: str, data: list[tuple[str, int]], itemsPerPage: int = 10, timeout: float = 120.0, sortReverse: bool = True):
 		super().__init__(timeout=timeout)
+
 		self.interaction = interaction
 		self.title = title
 		self.itemsPerPage = itemsPerPage
+
+		self.l = i18n.getLocale(interaction)
+
+		self.prevButton.label = f"⬅️ {i18n.t(self.l, 'commands.lb.embed.prev')}"
+		self.nextButton.label = f"{i18n.t(self.l, 'commands.lb.embed.next')} ➡️"
+
 		self.entries = sorted(data, key=lambda x: x[1], reverse=sortReverse)
 		self.pageCount = max(1, ceil(len(self.entries) / itemsPerPage))
 		self.currentPage = 0
+
 		self.prevButton.disabled = True
 		if self.pageCount <= 1:
 			self.nextButton.disabled = True
+
 
 	def makeEmbed(self) -> discord.Embed:
 		start = self.currentPage * self.itemsPerPage
@@ -29,11 +38,11 @@ class Leaderboard(View):
 		for idx, (name, value) in enumerate(slice_, start=start + 1):
 			description += f"`#{idx:<2}` {escapeMarkdown(name)} — **{value}**\n"
 		description += f"\n\n{FOOTER_TEXT}"
-		embed = discord.Embed(title=self.title, description=description or "*No data*", color=discord.Color.purple())
-		embed.set_footer(text=f"Page {self.currentPage+1}/{self.pageCount}")
+		embed = discord.Embed(title=self.title, description=description or f"*{i18n.t(self.l, 'commands.lb.embed.noData')}*", color=discord.Color.purple())
+		embed.set_footer(text=f"{i18n.t(self.l, 'commands.lb.embed.page')} {self.currentPage+1}/{self.pageCount}")
 		return embed
 
-	@button(label="⬅️ Prev", style=discord.ButtonStyle.gray, custom_id="leaderboard_prev")
+	@button(style=discord.ButtonStyle.gray, custom_id="leaderboard_prev")
 	async def prevButton(self, interaction: Interaction, button: Button):
 		if self.currentPage > 0:
 			self.currentPage -= 1
@@ -41,7 +50,7 @@ class Leaderboard(View):
 		self.prevButton.disabled = (self.currentPage == 0)
 		await interaction.response.edit_message(embed=self.makeEmbed(), view=self)
 
-	@button(label="Next ➡️", style=discord.ButtonStyle.gray, custom_id="leaderboard_next")
+	@button(style=discord.ButtonStyle.gray, custom_id="leaderboard_next")
 	async def nextButton(self, interaction: Interaction, button: Button):
 		if self.currentPage < self.pageCount - 1:
 			self.currentPage += 1
@@ -75,22 +84,28 @@ async def getUsername(userId: str, interaction: Interaction) -> str:
 	except Exception:
 		pass
 
-	return f"Unknown ({userId})"
+	return f"{i18n.t(i18n.getLocale(interaction), 'commands.lb.embed.unknown')} ({userId})"
 
 
-@leaderboardGroup.command(name="messages", description="Top users by success messages")
-@app_commands.describe(channel="Optional channel to analyze")
+@leaderboardGroup.command(
+	name="messages",
+	description=locale_str("commands.lb.messages.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.lb.arg.channel")
+)
 async def messagesLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	await interaction.response.defer()
 	conn, cursor = connectDb()
+	l = i18n.getChannelLocale(interaction.channel.id, interaction)
 	if channel:
 		cursor.execute("SELECT id FROM channels WHERE discord_channel_id = ?", (str(channel.id),))
 		row = cursor.fetchone()
 		if not row:
 			conn.close()
-			await interaction.followup.send(f"❌ {channel.mention} is not registered. Use `/add channel` first.", ephemeral=True)
+			await interaction.followup.send(f"❌ {channel.mention} {i18n.t(l, 'commands.lb.error')}.", ephemeral=True)
 			return
-		title = f"🏆 Messages Leaderboard for #{channel.name}"
+		title = f"🏆 {i18n.t(l, 'commands.lb.messages.title')} #{channel.name}"
 		cursor.execute("""
 			SELECT users.discord_user_id, COUNT(*) 
 			FROM messages
@@ -99,7 +114,7 @@ async def messagesLeaderboard(interaction: Interaction, channel: discord.TextCha
 			GROUP BY users.discord_user_id
 		""", (row[0],))
 	else:
-		title = "🏆 Messages Leaderboard (Global)"
+		title = f"🏆 {i18n.t(l, 'commands.lb.messages.gtitle')}"
 		cursor.execute("""
 			SELECT users.discord_user_id, COUNT(*) 
 			FROM messages
@@ -116,19 +131,25 @@ async def messagesLeaderboard(interaction: Interaction, channel: discord.TextCha
 	board = Leaderboard(interaction, title, data)
 	await board.start()
 
-@leaderboardGroup.command(name="reactions", description="Top users by reaction count")
-@app_commands.describe(channel="Optional channel to analyze")
+@leaderboardGroup.command(
+	name="reactions",
+	description=locale_str("commands.lb.reactions.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.lb.arg.channel")
+)
 async def reactionsLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	await interaction.response.defer()
+	l = i18n.getChannelLocale(interaction.channel, interaction)
 	conn, cursor = connectDb()
 	if channel:
 		cursor.execute("SELECT id FROM channels WHERE discord_channel_id = ?", (str(channel.id),))
 		row = cursor.fetchone()
 		if not row:
 			conn.close()
-			await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
+			await interaction.followup.send(f"❌ {channel.mention} {i18n.t(l, 'commands.lb.error')}.", ephemeral=True)
 			return
-		title = f"💜 Reactions Leaderboard for #{channel.name}"
+		title = f"💜 {i18n.t(l, 'commands.lb.reactions.title')} #{channel.name}"
 		cursor.execute("""
 			SELECT users.discord_user_id, COUNT(r.id)
 			FROM reactions r
@@ -138,7 +159,7 @@ async def reactionsLeaderboard(interaction: Interaction, channel: discord.TextCh
 			GROUP BY users.discord_user_id
 		""", (row[0],))
 	else:
-		title = "💜 Reactions Leaderboard (Global)"
+		title = f"💜 {i18n.t(l, 'commands.lb.reactions.gtitle')}"
 		cursor.execute("""
 			SELECT users.discord_user_id, COUNT(r.id)
 			FROM reactions r
@@ -154,11 +175,19 @@ async def reactionsLeaderboard(interaction: Interaction, channel: discord.TextCh
 	board = Leaderboard(interaction, title, data)
 	await board.start()
 
-@leaderboardGroup.command(name="delays", description="Best reaction times for success messages")
-@app_commands.describe(channel="Optional channel to analyze, worst='Show worst delays instead of best'", worst="Display users' worst delays instead of best ones", avg="Show users' average delays instead of best ones")
+@leaderboardGroup.command(
+	name="delays",
+	description=locale_str("commands.lb.delays.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.lb.arg.channel"),
+	worst=locale_str("commands.lb.delays.arg.worst"),
+	avg=locale_str("commands.lb.delays.arg.avg")
+)
 async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, worst: bool = False, avg: bool = False):
+	l = i18n.getChannelLocale(interaction.channel, interaction)
 	if worst and avg:
-		await interaction.response.send_message("❌ You cannot use both 'worst' and 'avg' options at the same time.", ephemeral=True)
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.lb.delays.error')}.", ephemeral=True)
 		return
 
 	await interaction.response.defer()
@@ -169,7 +198,7 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 		if not row:
 			conn.close()
 			return await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
-		title = f"⏱️ {'Worst' if worst else 'Best'} Delays Leaderboard for #{channel.name}"
+		title = f"⏱️ {i18n.t(l, 'commands.lb.delays.worst') if worst else i18n.t(l, 'commands.lb.delays.avg') if avg else i18n.t(l, 'commands.lb.delays.best')} {i18n.t(l, 'commands.lb.delays.title')} #{channel.name}"
 		cursor.execute(
 			"""
 			SELECT users.discord_user_id, m.timestamp
@@ -178,7 +207,7 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 			WHERE m.category = 'success' AND m.channel_id = ?
 		""", (row[0],))
 	else:
-		title = f"⏱️ {'Worst' if worst else 'Best'} Delays Leaderboard (Global)"
+		title = f"⏱️ {i18n.t(l, 'commands.lb.delays.worst') if worst else i18n.t(l, 'commands.lb.delays.avg') if avg else i18n.t(l, 'commands.lb.delays.best')} {i18n.t(l, 'commands.lb.delays.gtitle')}"
 		cursor.execute(
 			"""
 			SELECT users.discord_user_id, m.timestamp
@@ -212,10 +241,16 @@ async def delaysLeaderboard(interaction: Interaction, channel: discord.TextChann
 	board = Leaderboard(interaction, title, data, sortReverse=worst)
 	await board.start()
 
-@leaderboardGroup.command(name="streaks", description="Top users by longest success streak")
-@app_commands.describe(channel="Optional channel to analyze", current="Show current streak instead of best streak")
+@leaderboardGroup.command(
+	name="streaks",
+	description=locale_str("commands.lb.streaks.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.lb.arg.channel"),
+	current=locale_str("commands.lb.streaks.arg.current"))
 async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None, current: bool = False):
 	await interaction.response.defer()
+	l = i18n.getChannelLocale(interaction.channel, interaction)
 	conn, cursor = connectDb()
 
 	try:
@@ -229,7 +264,7 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 				await interaction.followup.send(f"❌ {channel.mention} is not registered.", ephemeral=True)
 				return
 
-			title = f"🔥 Streaks Leaderboard for #{channel.name}"
+			title = f"🔥 {i18n.t(l, 'commands.lb.streaks.title')} #{channel.name}"
 
 			# get users who have success messages in that channel, join to user_streaks
 			cursor.execute(
@@ -248,7 +283,7 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 			)
 		else:
 			# global: read all users from user_streaks (precomputed)
-			title = "🔥 Streaks Leaderboard (Global)"
+			title = f"🔥 {i18n.t(l, 'commands.lb.streaks.gtitle')}"
 			cursor.execute(
 				"""
 				SELECT u.discord_user_id, u.timezone,
@@ -285,11 +320,17 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 	await board.start()
 
 
-@leaderboardGroup.command(name="days", description="Top Participation Days – days with the most unique users sending a success message")
-@app_commands.describe(channel="Optional channel to analyze")
+@leaderboardGroup.command(
+	name="days",
+	description=locale_str("commands.lb.days.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.lb.arg.channel")
+)
 async def participationDaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	"""Show the top 10 days by count of distinct users with a success message."""
 	await interaction.response.defer()
+	l = i18n.getChannelLocale(interaction.channel.id, interaction)
 	conn, cursor = connectDb()
 
 	if channel:
@@ -301,11 +342,11 @@ async def participationDaysLeaderboard(interaction: Interaction, channel: discor
 		if not row:
 			conn.close()
 			return await interaction.followup.send(
-				f"❌ {channel.mention} is not registered. Use `/add channel` first.",
+				f"❌ {channel.mention} {i18n.t(l, 'commands.lb.errors.error')}. Use `/add channel` first.",
 				ephemeral=True
 			)
 		chan_id = row[0]
-		title = f"📅 Top Participation Days for #{channel.name}"
+		title = f"📅 {i18n.t(l, 'commands.lb.days.title')} #{channel.name}"
 		cursor.execute(
 			"""
 			SELECT DATE(m.timestamp) as day, COUNT(DISTINCT m.user_id) as users_count
@@ -318,7 +359,7 @@ async def participationDaysLeaderboard(interaction: Interaction, channel: discor
 			(chan_id,)
 		)
 	else:
-		title = "📅 Top Participation Days (Global)"
+		title = f"📅 {i18n.t(l, 'commands.lb.days.gtitle')}"
 		cursor.execute(
 			"""
 			SELECT DATE(m.timestamp) as day, COUNT(DISTINCT m.user_id) as users_count

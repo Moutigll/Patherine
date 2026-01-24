@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 
 from commands import bot
 from commands.populateDb import getCategoryFromTime, getUserId, isUserUntracked
+from utils.i18n import i18n
 from utils.utils import connectDb, log
 from events.achievements import handleAchievements
 
@@ -12,9 +13,9 @@ DEFAULT_TZ = ZoneInfo("Europe/Paris")
 
 # --- DB helpers ---
 def getChannelInfo(cursor, discordChannelId: str):
-	"""Return (internalId, tzName, discord_role_id) for channel, or None."""
+	"""Return (internalId, tzName, discord_role_id, lang) for channel, or None."""
 	cursor.execute(
-		"SELECT id, timezone, discord_role_id FROM channels WHERE discord_channel_id = ?",
+		"SELECT id, timezone, discord_role_id, lang FROM channels WHERE discord_channel_id = ?",
 		(discordChannelId,),
 	)
 	return cursor.fetchone()
@@ -163,7 +164,8 @@ async def on_message(message: discord.Message):
 		ch = getChannelInfo(cursor, str(message.channel.id))
 		if not ch:
 			return
-		internalId, tzName, _ = ch
+		internalId, tzName, _, cl = ch
+		cl = i18n.getLocale(cl) if cl else "en"
 		tz = ZoneInfo(tzName) if tzName else DEFAULT_TZ
 
 		# --- Local datetime in channel TZ ---
@@ -209,7 +211,7 @@ async def on_message(message: discord.Message):
 
 		roleIds = fetchUserRoleIds(cursor, userId)
 		await assignRolesAcrossGuilds(message.author, roleIds)
-		await handleAchievements(conn, cursor, internalId, userId, tzName, message)
+		await handleAchievements(conn, cursor, internalId, userId, tzName, message, cl)
 
 	finally:
 		try:

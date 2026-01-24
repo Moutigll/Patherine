@@ -1,0 +1,390 @@
+{
+	"bot": {
+		"name": "Patherine",
+		"description": "Bot dédié à célébrer Catherine de Médicis chaque jour à 12:06"
+	},
+
+	"commands": {
+		"invite": {
+			"description": "Affiche un lien d'invitation pour le bot",
+			"text": "Inviter"
+		},
+		"help": {
+			"description": "Affiche les informations sur le bot et ses commandes",
+			"argChannel": "salon:<#salon>",
+			"argUser": "utilisateur:<@utilisateur>",
+			"embed": {
+				"title": "Patherine - Aide",
+				"description": "Bot dédié à célébrer Catherine de Médicis chaque jour à 12:06",
+				"field1": {
+					"name": "But du bot",
+					"value1": "Rendre hommage à **Catherine de Médicis** pour avoir popularisé les pâtes en France/Europe.",
+					"value2": "Chaque jour à 12:06 dans le salon dédié, le bot vérifie les messages contenant `cath`."
+				},
+				"field2": {
+					"name": "Commandes principales",
+					"value1": "Affiche ce message",
+					"value2": "Donne le lien d'invitation du bot",
+					"value3": "Configure votre fuseau horaire",
+					"value4": "Le bot vous ignore"
+				},
+				"field3": {
+					"name": "Statistiques (stat)",
+					"value1": "Stats globales",
+					"value2": "Stats par utilisateur",
+					"value3": "Stats d'un salon spécifique",
+					"value4": "Vos stats personnelles",
+					"value5": "Stats d'un utilisateur spécifique"
+				},
+				"field4": {
+					"name": "Classements (leaderboard)",
+					"value1": "Classement des users avec le plus de caths (salon optionnel)",
+					"value2": "Classement du nombre de reaction données (salon optionnel)",
+					"value3": "Afficher les pires délais (défaut=False)",
+					"value4": "Afficher les moyennes (incompatible avec worst)",
+					"value5": "Afficher les séries en cours",
+					"value6": "Classement des jours avec le plus de messages cath"
+				},
+				"field5": {
+					"name": "Graphiques (graph)",
+					"value1": "Graphique de la participation des utilisateurs",
+					"value2": "Afficher le total cumulé (défaut=False)",
+					"value3": "Nombre maximum de points à afficher (défaut=50)",
+					"value4": "Graphique du nombre de messages",
+					"value5": "Afficher le total cumulé (défaut=False)",
+					"value6": "Nombre maximum de points à afficher (défaut=50)",
+					"value7": "Graphique des séries de messages"
+
+				},
+				"field6": {
+					"name": "Commandes admin",
+					"value1": "Ajoute un admin (OWNER only)",
+					"value2": "Force la mise à jour de tous les salons (OWNER only)",
+					"value3": "Récupérer les messages depuis cette date (YYYY-MM-DD HH:MM UTC, max 10 jours)",
+					"value4": "Ajoute un salon à la base de données (ADMIN only)",
+					"value5": "Rôle associé (optionnel)",
+					"value6": "Langue du salon (défaut=fr)",
+					"value7": "Fuseau horaire (défaut=Europe/Paris)",
+					"value8": "Force la mise à jour des données (ADMIN only)"
+				},
+				"field7": {
+					"name": "Support",
+					"value1": "Pour toute suggestion ou bug à propos du bot, remplissez une issue sur",
+					"value2": "Vous pouvez aussi me contacter directement sur Discord: @Moutig ou par mail"
+				}
+			}
+		},
+		"untrack": {
+			"description": "Fait en sorte que le bot ignore tous vos messages",
+			"confirmView": {
+				"button": "Confirmer",
+				"warning": "Cette action est **irréversible**",
+				"explanation": "Vos messages et reactions seront **supprimés**, et seul votre ID sera conservé pour vous ignorer",
+				"confirm": "Souhaitez-vous continuer"
+			},
+			"error1": "Vous êtes déjà ignoré par le bot.",
+			"error2": "Vous n'apparaissez pas dans la base de données",
+			"success": {
+				"part1": "Vos données ont été supprimées avec succès",
+				"part2": " messages** et",
+				"part3": " reactions** ont été supprimées"
+			}
+		},
+		"add": {
+			"admin": {
+				"description": "Ajouter un utilisateur comme administrateur (seul le PROPRIÉTAIRE peut le faire)",
+				"argUser": "Utilisateur à ajouter comme administrateur",
+				"reject": "Vous n'êtes pas autorisé à ajouter des administrateurs",
+				"alreadyAdmin": "est déjà un administrateur",
+				"success": "a été ajouté comme administrateur avec succès"
+			},
+			"channel": {
+				"description": "Ajouter un salon à la base de données (seul un ADMIN peut le faire)",
+				"arg": {
+					"channel": "salon à ajouter",
+					"role": "(Optionnel) Rôle à associer à ce salon",
+					"language": "(Optionnel) Langue du salon pour le bot (par défaut=fr)",
+					"timezone": "(Optionnel) Fuseau horaire à utiliser lors de la vérification des messages (par défaut=Europe/Paris)"
+				},
+				"errors": {
+					"alreadyExists": "est déjà enregistré. Veuillez utiliser",
+					"lang1": "Langue non supportée",
+					"lang2": "Les langues supportées sont :",
+					"tz": "Fuseau horaire invalide"
+				},
+				"embed1": {
+					"title": "Récupération de l'activité",
+					"desc": "Parcours de l'historique des messages"
+				},
+				"embed2": {
+					"title": "Mise à jour des réactions",
+					"desc": "Parcours de l'historique des réactions"
+				},
+				"Done": "Terminé"
+			}
+		},
+		"graph": {
+			"users": {
+				"description": "Afficher un graphique de la participation des utilisateurs au fil du temps",
+				"arg": {
+					"total": "Afficher le total (cumulatif) des utilisateurs au lieu des utilisateurs uniques quotidiens",
+					"points": "Nombre maximum de points à afficher (entre 10 et 200)"
+				},
+				"title1": "Participation totale des utilisateurs",
+				"title2": "Participation quotidienne des utilisateurs",
+				"xLabel": "Date",
+				"yLabel": "Nombre d'utilisateurs",
+				"embed": {
+					"title": "Graphique de participation des utilisateurs",
+					"desc": "participation des utilisateurs au fil du temps"
+				}
+			},
+			"messages": {
+				"description": "Afficher un graphique des messages envoyés au fil du temps",
+				"arg": {
+					"total": "Afficher le total (cumulatif) des messages au lieu des comptes quotidiens",
+					"points": "Nombre maximum de points à afficher (entre 10 et 200)"
+				},
+				"title1": "Total des messages envoyés",
+				"title2": "Messages envoyés quotidiennement",
+				"xLabel": "Date",
+				"yLabel": "Nombre de messages",
+				"embed": {
+					"title": "Graphique des messages",
+					"desc": "messages au fil du temps"
+				}
+			},
+			"streaks": {
+				"description": "Afficher un graphique des séries de messages pour les meilleurs utilisateurs",
+				"title": "Progression des meilleures séries (Top 10 utilisateurs)",
+				"xLabel": "Date",
+				"yLabel": "Meilleure série atteinte",
+				"embed": {
+					"title": "Progression des meilleures séries",
+					"desc": "Top 10 des utilisateurs par série maximale – progression des séries record au fil du temps"
+				},
+				"errors": {
+					"noData": "Aucune donnée de série disponible."
+				}
+			},
+			"errors": {
+				"points": "Les points doivent être compris entre",
+				"points2": "et",
+				"noData": "Pas assez de données pour générer le graphique"
+			},
+			"descT1": "Total: ",
+			"descT2": "Quotidien: ",
+			"footer": "Généré en"
+		},
+		"lb": {
+			"embed": {
+				"noData": "Aucune donnée disponible",
+				"page": "Page",
+				"unknown": "Inconnu",
+				"prev": "Préc",
+				"next": "Suiv"
+			},
+			"messages": {
+				"description": "Top des utilisateurs par messages réussis",
+				"title": "Classement des messages pour",
+				"gtitle": "Classement des messages (Global)"
+			},
+			"reactions": {
+				"description": "Top des utilisateurs par réactions données",
+				"title": "Classement des réactions pour",
+				"gtitle": "Classement des réactions (Global)"
+			},
+			"delays": {
+				"description": "Meilleurs temps de réaction pour les messages réussis",
+				"arg": {
+					"worst": "Afficher les pires délais au lieu des meilleurs",
+					"avg": "Afficher les délais moyens des utilisateurs au lieu des meilleurs"
+				},
+				"title": "Classement des délais pour",
+				"gtitle": "Classement des délais (Global)",
+				"worst": "Pires",
+				"avg": "Moyenne",
+				"best": "Meilleurs",
+				"error": "Vous ne pouvez pas utiliser les options 'worst' et 'avg' en même temps"
+			},
+			"streaks": {
+				"description": "Top des utilisateurs par plus longues séries de messages",
+				"arg": {
+					"current": "Afficher la série actuelle au lieu de la meilleure série"
+				},
+				"title": "Classement des séries pour",
+				"gtitle": "Classement des séries (Global)"
+			},
+			"days": {
+				"description": "Meilleurs jours de participation – jours avec le plus d'utilisateurs uniques envoyant un cath",
+				"title": "Meilleurs jours de participation pour",
+				"gtitle": "Meilleurs jours de participation (Global)"
+			},
+			"arg": {
+				"channel": "Salon optionnel à analyser"
+			},
+			"error": "n'est pas enregistré. Utilisez `/add channel` d'abord"
+		},
+		"stat": {
+			"days": "jours",
+			"cDays": " jours (actuels",
+			"messages": {
+				"m": "Messages",
+				"f": "Échecs",
+				"s": "Réussites",
+				"c": "Ratés"
+			},
+			"reactions": {
+				"m": "Réactions",
+				"given": "Données",
+				"received": "Reçues"
+			},
+			"streak": "Série",
+			"delays": {
+				"m": "Délai de réussite",
+				"min": "min",
+				"avg": "moy",
+				"max": "max",
+				"last": "dernier"
+			},
+			"global": {
+				"title": "Statistiques globales",
+				"description": "Statistiques globales pour tous les salons suivis"
+			},
+			"channel": {
+				"title": "Statistiques du salon",
+				"description": "Statistiques pour un salon spécifique",
+				"arg": {
+					"channel": "Le salon à analyser"
+				}
+			},
+			"me": {
+				"title": "Mes statistiques",
+				"description": "Vos statistiques personnelles sur tous les salons suivis"
+			},
+			"user": {
+				"title": "Statistiques pour",
+				"description": "Statistiques pour un utilisateur spécifique sur tous les salons suivis",
+				"arg": {
+					"user": "L’utilisateur à analyser"
+				}
+			}
+		},
+		"update": {
+			"channel": {
+				"description": "Mettre à jour un salon avec les derniers messages et réactions (seuls les ADMIN peuvent le faire)",
+				"arg": {
+					"channel": "Salon à mettre à jour"
+				},
+				"embed1": {
+					"title": "Mise à jour de l’activité",
+					"desc": "Récupération des nouveaux messages"
+				},
+				"embed2": {
+					"title": "Mise à jour des réactions",
+					"desc": "Analyse des nouvelles réactions"
+				}
+			},
+			"all": {
+				"description": "Mettre à jour tous les salons avec les nouveaux messages et réactions (seul le OWNER peut le faire)",
+				"errors": {
+					"notOwner": "Seul le propriétaire du bot peut exécuter cette commande",
+					"noChannels": "Aucun salon enregistré",
+					"dateLimit": "from_date ne peut pas dater de plus de 10 jours",
+					"noChId": "Impossible de récupérer l’identifiant du salon"
+				},
+				"embed": {
+					"title": "Mise à jour de tous les salons",
+					"desc": "Récupération des messages depuis"
+				},
+				"guildSummary": {
+					"unknown": "Serveur inconnu",
+					"p1": "enregistrés",
+					"p2": "réagis",
+					"p3": "série du salon",
+					"p4": "série globale"
+				},
+				"success": "Tous les salons ont été mis à jour"
+			},
+			"timezone": {
+				"description": "Mettre à jour votre fuseau horaire ou créer votre entrée utilisateur si absente",
+				"arg": {
+					"timezone": "Votre fuseau horaire (ex. Europe/Paris)"
+				},
+				"errors": {
+					"invalid": "Fuseau horaire invalide"
+				},
+				"success": "Votre fuseau horaire a été mis à jour vers",
+				"created": "Utilisateur créé avec le fuseau horaire"
+			},
+			"arg": {
+				"date": "(Optionnel) récupérer les messages à partir de cette date (YYYY-MM-DD HH:MM UTC)"
+			},
+			"errors": {
+				"notFound": "Salon introuvable, utilisez /add_channel d’abord",
+				"date": "Format de date invalide. Veuillez utiliser YYYY-MM-DD HH:MM UTC"
+			}
+		}
+	},
+	"errors": {
+		"notAuthorized": "Vous n'êtes pas autorisé à effectuer cette action"
+	},
+	"dbSummary": {
+		"title": {
+			"p1": "Messages stockés",
+			"p2": "message(s). Réactions récupérées",
+			"p3": "réaction(s)."
+		},
+		"summary": {
+			"header": "Résumé",
+			"success": "Succès",
+			"unique": "Utilisateurs ayant réussi au moins une fois",
+			"reac": "Total des réactions"
+		},
+		"streaks": {
+			"cCurrent": "Salon actuel",
+			"cMax": "Salon max",
+			"gCurrent": "Global actuel",
+			"gMax": "Global max"
+		}
+	},
+	"achievements": {
+		"count": {
+			"c10": "Continuez comme ça !",
+			"c42": "Vous avez trouvé la réponse dans Catherine !",
+			"c69": "Sympa !",
+			"c420": "Restez cool mec !",
+			"gen": "🎉 Félicitations pour avoir atteint ce nombre !",
+			"genY": "année(s), c’est vraiment incroyable !"
+		},
+		"user": {
+			"congrats": "Félicitations",
+			"msg": {
+				"p1": "Vous avez envoyé cath",
+				"p2": "fois !"
+			},
+			"streak": {
+				"p1": "Votre série a atteint",
+				"p2": "jours consécutifs !"
+			}
+		},
+		"channel": {
+			"msg": {
+				"p1": "Le total de messages cath du salon a atteint"
+			},
+			"streak": {
+				"p1": "La série du salon a atteint",
+				"p2": "jours consécutifs !"
+			}
+		},
+		"global": {
+			"msg": {
+				"p1": "Le total global de messages cath a atteint"
+			},
+			"streak": {
+				"p1": "La série globale a atteint"
+			}
+		}
+	}
+
+}

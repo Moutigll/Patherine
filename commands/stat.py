@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from commands import FOOTER_TEXT, statGroup
+from utils.i18n import i18n, locale_str
 from utils.utils import connectDb, escapeMarkdown
 
 
@@ -56,7 +57,7 @@ def fetchStreak(cursor, table: str, whereClause: str = "", params=()) -> tuple[i
 	return 0, 0, None
 
 
-def computeStreakString(current: int, best: int, lastDay: date | None, tz: timezone) -> str:
+def computeStreakString(current: int, best: int, lastDay: date | None, tz: timezone, l) -> str:
 	"""Compute streak string, flame only if current == max, same logic as before."""
 	now = datetime.now(tz)
 	today = now.date()
@@ -65,8 +66,8 @@ def computeStreakString(current: int, best: int, lastDay: date | None, tz: timez
 	else:
 		currentStreak = 0
 	if currentStreak == best and best > 0:
-		return f"🔥 {best} days"
-	return f"{best} days (current: {currentStreak})"
+		return f"🔥 {best} {i18n.t(l, 'commands.stat.days')}"
+	return f"{best} {i18n.t(l, 'commands.stat.cDays')}: ({currentStreak})"
 
 
 def calculateDelays(timestamps):
@@ -81,6 +82,7 @@ def calculateDelays(timestamps):
 # Stats Embed
 # -----------------------------
 async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=False):
+	l = i18n.getLocale(interaction)
 	conn, cursor = connectDb()
 	try:
 		# --- Messages counts ---
@@ -111,7 +113,7 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 				 )
 			""", params)
 			totalGiven = cursor.fetchone()[0]
-			reactionsStr = f"Received: {totalReceived} 💜\nGiven: {totalGiven} 💜"
+			reactionsStr = f"{i18n.t(l, 'commands.stat.reactions.received')}: {totalReceived} 💜\n{i18n.t(l, 'commands.stat.reactions.given')}: {totalGiven} 💜"
 			userTz = getUserTimezone(cursor, params[0])
 		else:
 			reactionsStr = f"{totalReceived} 💜"
@@ -125,7 +127,7 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 		else:
 			current, best, lastDay = fetchStreak(cursor, "global_streak")
 
-		streakStr = computeStreakString(current, best, lastDay, userTz)
+		streakStr = computeStreakString(current, best, lastDay, userTz, l)
 
 		# --- Success delays ---
 		streakWhere = addCondition(whereClause, "m.category = 'success'")
@@ -142,23 +144,23 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 
 	embed = discord.Embed(title=title, color=discord.Color.purple())
 	embed.add_field(
-		name="📥 Messages",
+		name=f"📥 {i18n.t(l, 'commands.stat.messages.m')}",
 		value=(
-			f"• Fail:	{categoryCounts.get('fail', 0)}\n"
-			f"• Success: {categoryCounts.get('success', 0)}\n"
-			f"• Choke:   {categoryCounts.get('choke', 0)}"
+			f"• {i18n.t(l, 'commands.stat.messages.f')}:	{categoryCounts.get('fail', 0)}\n"
+			f"• {i18n.t(l, 'commands.stat.messages.s')}: {categoryCounts.get('success', 0)}\n"
+			f"• {i18n.t(l, 'commands.stat.messages.c')}:   {categoryCounts.get('choke', 0)}"
 		),
 		inline=False
 	)
-	embed.add_field(name="💜 Reactions", value=reactionsStr, inline=False)
-	embed.add_field(name="🔥 Streak", value=streakStr, inline=False)
+	embed.add_field(name=f"💜 {i18n.t(l, 'commands.stat.reactions.m')}", value=reactionsStr, inline=False)
+	embed.add_field(name=f"🔥 {i18n.t(l, 'commands.stat.streak')}", value=streakStr, inline=False)
 	embed.add_field(
-		name="⏱️ Success delay (sec)",
+		name=f"⏱️ {i18n.t(l, 'commands.stat.delays.m')} (sec)",
 		value=(
-			f"min: {minD:.3f}\n"
-			f"avg: {avgD:.3f}\n"
-			f"max: {maxD:.3f}\n"
-			f"last: {lastD:.3f}"
+			f"{i18n.t(l, 'commands.stat.delays.min')}: {minD:.3f}\n"
+			f"{i18n.t(l, 'commands.stat.delays.avg')}: {avgD:.3f}\n"
+			f"{i18n.t(l, 'commands.stat.delays.max')}: {maxD:.3f}\n"
+			f"{i18n.t(l, 'commands.stat.delays.last')}: {lastD:.3f}"
 		),
 		inline=False
 	)
@@ -170,27 +172,43 @@ async def sendStatsEmbed(interaction, title, whereClause="", params=(), isUser=F
 # -----------------------------
 # Commands
 # -----------------------------
-@statGroup.command(name="global", description="Global stats across all channels")
+@statGroup.command(
+	name="global",
+	description=locale_str("commands.stat.global.description")
+)
 async def globalStats(interaction: discord.Interaction):
-	await sendStatsEmbed(interaction, "📊 Global statistics")
+	await sendStatsEmbed(interaction, f"📊 {i18n.t( i18n.getLocale(interaction),'commands.stat.global.title')}")
 
-@statGroup.command(name="channel", description="Stats for a specific channel")
-@app_commands.describe(channel="The channel to analyze")
+@statGroup.command(
+	name="channel",
+	description=locale_str("commands.stat.channel.description")
+)
+@app_commands.describe(
+	channel=locale_str("commands.stat.channel.arg.channel")
+)
 async def channelStats(interaction: discord.Interaction, channel: discord.TextChannel):
 	where = "WHERE m.channel_id = (SELECT id FROM channels WHERE discord_channel_id = ?)"
 	params = (str(channel.id),)
-	await sendStatsEmbed(interaction, f"📊 Stats for {channel.mention}", where, params)
+	await sendStatsEmbed(interaction, f"📊 {i18n.t( i18n.getLocale(interaction),'commands.stat.channel.title')} {channel.mention}", where, params)
 
-@statGroup.command(name="me", description="Your personal stats")
+@statGroup.command(
+	name="me",
+	description=locale_str("commands.stat.me.description")
+)
 async def myStats(interaction: discord.Interaction):
 	userId = str(interaction.user.id)
 	where = "WHERE m.user_id = (SELECT id FROM users WHERE discord_user_id = ?)"
 	params = (userId,)
-	await sendStatsEmbed(interaction, "📊 My statistics", where, params, isUser=True)
+	await sendStatsEmbed(interaction, f"📊 {i18n.t( i18n.getLocale(interaction),'commands.stat.me.title')}", where, params, isUser=True)
 
-@statGroup.command(name="user", description="Stats for a specific user")
-@app_commands.describe(user="The user to analyze")
+@statGroup.command(
+	name="user",
+	description=locale_str("commands.stat.user.description")
+)
+@app_commands.describe(
+	user=locale_str("commands.stat.user.arg.user")
+)
 async def userStats(interaction: discord.Interaction, user: discord.User):
 	where = "WHERE m.user_id = (SELECT id FROM users WHERE discord_user_id = ?)"
 	params = (str(user.id),)
-	await sendStatsEmbed(interaction, f"📊 Stats for {escapeMarkdown(user.name)}", where, params, isUser=True)
+	await sendStatsEmbed(interaction, f"📊 {i18n.t( i18n.getLocale(interaction),'commands.stat.user.title')} {escapeMarkdown(user.name)}", where, params, isUser=True)

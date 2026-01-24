@@ -11,6 +11,7 @@ from discord import app_commands
 
 from commands import graphGroup, makeEmbed
 from commands.leaderboard import getUsername
+from utils.i18n import i18n, locale_str
 from utils.utils import connectDb, log
 
 MAX_POINTS_DEFAULT = 75
@@ -73,29 +74,32 @@ def plotToBuffer(dates: List[datetime.date], counts: List[float], title: str, yl
 	return buf
 
 
-def makeGraphEmbed(title: str, description: str, filename: str, elapsed_seconds: float) -> discord.Embed:
+def makeGraphEmbed(title: str, description: str, filename: str, elapsed_seconds: float, l: str) -> discord.Embed:
 	"""
 	Create an embed that places the image (attachment) above the description
 	and uses set_footer for the generation time (so footer is rendered by Discord).
 	"""
 	embed = makeEmbed(title=title, description=description)
 	embed.set_image(url=f"attachment://{filename}")
-	embed.set_footer(text=f"Generated in {elapsed_seconds:.2f} s")
+	embed.set_footer(text=f"{i18n.t(l, 'commands.graph.footer')} {elapsed_seconds:.2f}s")
 	return embed
 
 
 #--- Commands ---
-@graphGroup.command(name="users", description="Show a graph of user participation over time")
+@graphGroup.command(
+	name="users",
+	description=locale_str("commands.graph.users.description"))
 @app_commands.describe(
-	total="Show total (cumulative) users instead of daily unique users",
-	points=f"Maximum number of points to display (between {MIN_POINTS} and {MAX_POINTS})"
+	total=locale_str("commands.graph.users.arg.total"),
+	points=locale_str("commands.graph.users.arg.points")
 )
 async def graphUsersCommand(interaction: discord.Interaction, total: bool = False, points: int = MAX_POINTS_DEFAULT):
 	"""Generate and send a user participation graph."""
 	await interaction.response.defer()
+	l = i18n.getLocale(interaction)
 
 	if points < MIN_POINTS or points > MAX_POINTS:
-		await interaction.followup.send(f"Points parameter must be between {MIN_POINTS} and {MAX_POINTS}.")
+		await interaction.followup.send(f"{i18n.t(l, 'commands.graph.errors.points')} {MIN_POINTS} {i18n.t(l, 'commands.graph.errors.points2')} {MAX_POINTS}.")
 		return
 
 	start = time.perf_counter()
@@ -112,7 +116,7 @@ async def graphUsersCommand(interaction: discord.Interaction, total: bool = Fals
 			""")
 			rows = cursor.fetchall()
 			if not rows:
-				await interaction.followup.send("No data available to generate the graph.")
+				await interaction.followup.send(i18n.t(l, "commands.graph.errors.noData"))
 				return
 
 			per_day = {}
@@ -137,7 +141,7 @@ async def graphUsersCommand(interaction: discord.Interaction, total: bool = Fals
 			""")
 			rows = cursor.fetchall()
 			if not rows:
-				await interaction.followup.send("No data available to generate the graph.")
+				await interaction.followup.send(i18n.t(l, "commands.graph.errors.noData"))
 				return
 			dates = [datetime.strptime(d, "%Y-%m-%d").date() for d, _ in rows]
 			counts = [v for _, v in rows]
@@ -151,32 +155,37 @@ async def graphUsersCommand(interaction: discord.Interaction, total: bool = Fals
 	dates, counts = downsampleWithAverage(dates, counts, points)
 
 	# Ensure x-limits include first and last recorded day
-	buf = plotToBuffer(dates, counts, ("Total User Participation" if total else "Daily User Participation"), "Number of Users")
+	buf = plotToBuffer(dates, counts, (i18n.t(l, "commands.graph.users.title1") if total else i18n.t(l, "commands.graph.users.title2")), i18n.t(l, "commands.graph.users.yLabel"))
 
 	elapsed = time.perf_counter() - start
 	filename = "user_participation_graph.png"
 	log(f"Graph(users): {'total' if total else 'daily'} generated in {elapsed:.2f}s for {interaction.guild.name if interaction.guild else interaction.user}")
 	file = discord.File(buf, filename=filename)
 	embed = makeGraphEmbed(
-		title="User Participation Graph",
-		description=f"{'Total' if total else 'Daily'} user participation over time.",
+		title=i18n.t(l, "commands.graph.users.embed.title"),
+		description=f"{i18n.t(l, 'commands.graph.descT1') if total else i18n.t(l, 'commands.graph.descT2')} {i18n.t(l, 'commands.graph.users.embed.desc')}.",
 		filename=filename,
-		elapsed_seconds=elapsed
+		elapsed_seconds=elapsed,
+		l=l
 	)
 	await interaction.followup.send(embed=embed, file=file)
 
 
-@graphGroup.command(name="messages", description="Show a graph of messages sent over time")
+@graphGroup.command(
+	name="messages",
+	description=locale_str("commands.graph.messages.description")
+)
 @app_commands.describe(
-	total="Show total (cumulative) messages instead of daily counts",
-	points=f"Maximum number of points to display (between {MIN_POINTS} and {MAX_POINTS})"
+	total=locale_str("commands.graph.messages.arg.total"),
+	points=locale_str("commands.graph.messages.arg.points")
 )
 async def graphMessagesCommand(interaction: discord.Interaction, total: bool = False, points: int = MAX_POINTS_DEFAULT):
 	"""Generate and send a messages-per-day graph."""
 	await interaction.response.defer()
+	l = i18n.getLocale(interaction)
 
 	if points < MIN_POINTS or points > MAX_POINTS:
-		await interaction.followup.send(f"Points parameter must be between {MIN_POINTS} and {MAX_POINTS}.")
+		await interaction.followup.send(f"{i18n.t(l, 'commands.graph.errors.points')} {MIN_POINTS} {i18n.t(l, 'commands.graph.errors.points2')} {MAX_POINTS}.")
 		return
 
 	start = time.perf_counter()
@@ -193,7 +202,7 @@ async def graphMessagesCommand(interaction: discord.Interaction, total: bool = F
 			""")
 			rows = cursor.fetchall()
 			if not rows:
-				await interaction.followup.send("No data available to generate the graph.")
+				await interaction.followup.send(i18n.t(l, "commands.graph.errors.noData"))
 				return
 			dates = [datetime.strptime(d, "%Y-%m-%d").date() for d, _ in rows]
 			counts = []
@@ -212,7 +221,7 @@ async def graphMessagesCommand(interaction: discord.Interaction, total: bool = F
 			""")
 			rows = cursor.fetchall()
 			if not rows:
-				await interaction.followup.send("No data available to generate the graph.")
+				await interaction.followup.send(i18n.t(l, "commands.graph.errors.noData"))
 				return
 			dates = [datetime.strptime(d, "%Y-%m-%d").date() for d, _ in rows]
 			counts = [v for _, v in rows]
@@ -225,17 +234,18 @@ async def graphMessagesCommand(interaction: discord.Interaction, total: bool = F
 	# Downsample while preserving endpoints
 	dates, counts = downsampleWithAverage(dates, counts, points)
 
-	buf = plotToBuffer(dates, counts, ("Total Messages" if total else "Daily Messages"), "Number of Messages")
+	buf = plotToBuffer(dates, counts, (i18n.t(l, "commands.graph.messages.title1") if total else i18n.t(l, "commands.graph.messages.title2")), i18n.t(l, "commands.graph.messages.yLabel"))
 
 	elapsed = time.perf_counter() - start
 	filename = "messages_graph.png"
 	log(f"Graph(messages): {'total' if total else 'daily'} generated in {elapsed:.2f}s for {interaction.guild.name if interaction.guild else interaction.user}")
 	file = discord.File(buf, filename=filename)
 	embed = makeGraphEmbed(
-		title="Messages Graph",
-		description=f"{'Total' if total else 'Daily'} messages over time.",
+		title=i18n.t(l, "commands.graph.messages.embed.title"),
+		description=f"{i18n.t(l, 'commands.graph.descT1') if total else i18n.t(l, 'commands.graph.descT2')} {i18n.t(l, 'commands.graph.messages.embed.desc')}.",
 		filename=filename,
-		elapsed_seconds=elapsed
+		elapsed_seconds=elapsed,
+		l=l
 	)
 	await interaction.followup.send(embed=embed, file=file)
 
@@ -320,7 +330,7 @@ def getTopStreaksHistory(cursor) -> List[dict]:
 	return result
 
 
-def plotStreaksToBuffer(usersData: List[dict]) -> io.BytesIO:
+def plotStreaksToBuffer(usersData: List[dict], l) -> io.BytesIO:
 	plt.figure(figsize=(13, 7))
 
 	for userData in usersData:
@@ -351,9 +361,9 @@ def plotStreaksToBuffer(usersData: List[dict]) -> io.BytesIO:
 			label=username
 		)
 
-	plt.title("Best Streak Progression (Top 10 Users)", fontsize=16)
-	plt.xlabel("Date", fontsize=12)
-	plt.ylabel("Best streak achieved", fontsize=12)
+	plt.title(i18n.t(l, "commands.graph.streaks.title"), fontsize=16)
+	plt.xlabel(i18n.t(l, "commands.graph.streaks.xLabel"), fontsize=12)
+	plt.ylabel(i18n.t(l, "commands.graph.streaks.yLabel"), fontsize=12)
 	plt.grid(alpha=0.3)
 
 	ax = plt.gca()
@@ -378,16 +388,20 @@ def plotStreaksToBuffer(usersData: List[dict]) -> io.BytesIO:
 	return buf
 
 
-@graphGroup.command(name="streaks", description="Show best streak progression for top 10 users")
+@graphGroup.command(
+	name="streaks",
+	description=locale_str("commands.graph.streaks.description")
+)
 async def graphStreaksCommand(interaction: discord.Interaction):
 	await interaction.response.defer()
+	l = i18n.getLocale(interaction)
 
 	start = time.perf_counter()
 	conn, cursor = connectDb()
 	try:
 		usersData = getTopStreaksHistory(cursor)
 		if not usersData:
-			await interaction.followup.send("No streak data available.")
+			await interaction.followup.send(i18n.t(l, "commands.graph.streaks.errors.noData"))
 			return
 	finally:
 		try:
@@ -402,19 +416,20 @@ async def graphStreaksCommand(interaction: discord.Interaction):
 		userData["username"] = f"{username} - {maxStreak}"
 
 
-	buf = plotStreaksToBuffer(usersData)
+	buf = plotStreaksToBuffer(usersData, l)
 
 	elapsed = time.perf_counter() - start
 	filename = "streaks_graph.png"
 
-	log(f"Graph(streaks): generated in {elapsed:.2f}s")
+	log(f"Graph(streaks): generated in {elapsed:.2f}s for {interaction.guild.name if interaction.guild else interaction.user}")
 
 	file = discord.File(buf, filename=filename)
 	embed = makeGraphEmbed(
-		title="Best Streak Progression",
-		description="Top 10 users by max streak – progression of record streaks over time.",
+		title=i18n.t(l, "commands.graph.streaks.embed.title"),
+		description=i18n.t(l, "commands.graph.streaks.embed.desc"),
 		filename=filename,
-		elapsed_seconds=elapsed
+		elapsed_seconds=elapsed,
+		l=l
 	)
 
 	await interaction.followup.send(embed=embed, file=file)

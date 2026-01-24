@@ -1,0 +1,388 @@
+{
+	"bot": {
+		"name": "Patherine",
+		"description": "Bot dedicated to celebrating Catherine de' Medici every day at 12:06"
+	},
+
+	"commands": {
+		"invite": {
+			"description": "Display an invitation link for the bot",
+			"text": "Invite"
+		},
+		"help": {
+			"description": "Display information about the bot and its commands",
+			"argChannel": "channel:<#channel>",
+			"argUser": "user:<@user>",
+			"embed": {
+				"title": "Patherine - Help",
+				"description": "Bot dedicated to celebrating Catherine de' Medici every day at 12:06",
+				"field1": {
+					"name": "Bot purpose",
+					"value1": "Pay tribute to **Catherine de' Medici** for popularizing pasta in France/Europe.",
+					"value2": "Every day at 12:06 in the dedicated channel, the bot checks messages containing `cath`."
+				},
+				"field2": {
+					"name": "Main commands",
+					"value1": "Display this message",
+					"value2": "Provide the bot invitation link",
+					"value3": "Configure your time zone",
+					"value4": "The bot ignores you"
+				},
+				"field3": {
+					"name": "Statistics (stat)",
+					"value1": "Global statistics",
+					"value2": "Statistics per user",
+					"value3": "Statistics for a specific channel",
+					"value4": "Your personal statistics",
+					"value5": "Statistics for a specific user"
+				},
+				"field4": {
+					"name": "Leaderboards (leaderboard)",
+					"value1": "Ranking of users with the most caths (optional channel)",
+					"value2": "Ranking of reactions given (optional channel)",
+					"value3": "Show worst delays (default=False)",
+					"value4": "Show averages (incompatible with worst)",
+					"value5": "Show ongoing streaks",
+					"value6": "Ranking of days with the most cath messages"
+				},
+				"field5": {
+					"name": "Graphs (graph)",
+					"value1": "User participation graph",
+					"value2": "Show cumulative total (default=False)",
+					"value3": "Maximum number of points to display (default=50)",
+					"value4": "Message count graph",
+					"value5": "Show cumulative total (default=False)",
+					"value6": "Maximum number of points to display (default=50)",
+					"value7": "Message streak graph"
+				},
+				"field6": {
+					"name": "Admin commands",
+					"value1": "Add an admin (OWNER only)",
+					"value2": "Force update of all channels (OWNER only)",
+					"value3": "Fetch messages since this date (YYYY-MM-DD HH:MM UTC, max 10 days)",
+					"value4": "Add a channel to the database (ADMIN only)",
+					"value5": "Associated role (optional)",
+					"value6": "Channel language (default=en)",
+					"value7": "Time zone (default=Europe/Paris)",
+					"value8": "Force data update (ADMIN only)"
+				},
+				"field7": {
+					"name": "Support",
+					"value1": "For any suggestion or bug related to the bot, please open an issue on",
+					"value2": "You can also contact me directly on Discord: @Moutig or by email"
+				}
+			}
+		},
+		"untrack": {
+			"description": "Make the bot ignore all your messages",
+			"confirmView": {
+				"button": "Confirm",
+				"warning": "This action is **irreversible**",
+				"explanation": "Your messages and reactions will be **deleted**, and only your ID will be kept to ignore you",
+				"confirm": "Do you want to continue?"
+			},
+			"error1": "You are already ignored by the bot.",
+			"error2": "You do not appear in the database",
+			"success": {
+				"part1": "Your data has been successfully deleted",
+				"part2": " messages** and",
+				"part3": " reactions** have been removed"
+			}
+		},
+		"add": {
+			"admin": {
+				"description": "Add a user as admin (only OWNER can do that)",
+				"argUser": "User to add as admin",
+				"reject": "You are not authorized to add admins",
+				"alreadyAdmin": "is already an admin",
+				"success": "has been added as an admin successfully"
+			},
+			"channel": {
+				"description": "Add a channel to the database (only ADMIN can do that)",
+				"arg": {
+					"channel": "Channel to add",
+					"role": "(Optional) Role to associate with this channel",
+					"language": "(Optional) Channel language for the bot (default=fr)",
+					"timezone": "(Optional) Time zone to use when checking caths (default=Europe/Paris)"
+				},
+				"errors": {
+					"alreadyExists": "is already being tracked. Pls use",
+					"lang1": "Unsupported language",
+					"lang2": "Supported languages are:",
+					"tz": "Invalid timezone"
+				},
+				"embed1": {
+					"title": "Fetching activity",
+					"desc": "Looking through message history"
+				},
+				"embed2": {
+					"title": "Updating reactions",
+					"desc": "Looking through reactions history"
+				},
+				"Done": "Done"
+			}
+		},
+		"graph": {
+			"users": {
+				"description": "Show a graph of user participation over time",
+				"arg": {
+					"total": "Show total (cumulative) users instead of daily unique users",
+					"points": "Maximum number of points to display (between 10 and 200)"
+				},
+				"title1": "Total User Participation",
+				"title2": "Daily User Participation",
+				"xLabel": "Date",
+				"yLabel": "Number of Users",
+				"embed": {
+					"title": "User Participation Graph",
+					"desc": "user participation over time"
+				}
+			},
+			"messages": {
+				"description": "Show a graph of messages sent over time",
+				"arg": {
+					"total": "Show total (cumulative) messages instead of daily counts",
+					"points": "Maximum number of points to display (between 10 and 200)"
+				},
+				"title1": "Total Messages Sent",
+				"title2": "Daily Messages Sent",
+				"xLabel": "Date",
+				"yLabel": "Number of Messages",
+				"embed": {
+					"title": "Messages Graph",
+					"desc": "messages over time"
+				}
+			},
+			"streaks": {
+				"description": "Show a graph of message streaks for top users",
+				"title": "Best Streak Progression (Top 10 Users)",
+				"xLabel": "Date",
+				"yLabel": "Best streak achieved",
+				"embed": {
+					"title": "Best Streak Progression",
+					"desc": "Top 10 users by max streak – progression of record streaks over time"
+				},
+				"errors": {
+					"noData": "No streak data available."
+				}
+			},
+			"errors": {
+				"points": "Points must be between",
+				"points2": "and",
+				"noData": "Not enough data to generate the graph"
+			},
+			"descT1": "Total",
+			"descT2": "Daily",
+			"footer": "Generated in"
+		},
+		"lb": {
+			"embed": {
+				"noData": "No data available",
+				"page": "Page",
+				"unknown": "Unknown",
+				"prev": "Prev",
+				"next": "Next"
+			},
+			"messages": {
+				"description": "Top users by successful messages",
+				"title": "Messages Leaderboard for",
+				"gtitle": "Messages Leaderboard (Global)"
+			},
+			"reactions": {
+				"description": "Top users by reactions given",
+				"title": "Reactions Leaderboard for",
+				"gtitle": "Reactions Leaderboard (Global)"
+			},
+			"delays": {
+				"description": "Best reaction times for success messages",
+				"arg": {
+					"worst": "Show worst delays instead of best ones",
+					"avg": "Show users' average delays instead of best ones"
+				},
+				"title": "Delays Leaderboard for",
+				"gtitle": "Delays Leaderboard (Global)",
+				"worst": "Worst",
+				"avg": "Average",
+				"best": "Best",
+				"error": "You cannot use both 'worst' and 'avg' options at the same time"
+			},
+			"streaks": {
+				"description": "Top users by longest message streaks",
+				"arg": {
+					"current": "Show current streak instead of best streak"
+				},
+				"title": "Streaks Leaderboard for",
+				"gtitle": "Streaks Leaderboard (Global)"
+			},
+			"days": {
+				"description": "Top Participation Days – days with the most unique users sending a success message",
+				"title": "Top Participation Days for",
+				"gtitle": "Top Participation Days (Global)"
+			},
+			"arg": {
+				"channel": "Optional channel to analyze"
+			},
+			"error": "is not registered. Use `/add channel` first"
+		},
+		"stat": {
+			"days": "days",
+			"cDays": " days (current",
+			"messages": {
+				"m": "Messages",
+				"f": "Fails",
+				"s": "Successes",
+				"c": "Chokes"
+			},
+			"reactions": {
+				"m": "Reactions",
+				"given": "Given",
+				"received": "Received"
+			},
+			"streak": "Streak",
+			"delays": {
+				"m": "Success delay",
+				"min": "min",
+				"avg": "avg",
+				"max": "max",
+				"last": "last"
+			},
+			"global": {
+				"title": "Global Statistics",
+				"description": "Overall statistics for all tracked channels"
+			},
+			"channel": {
+				"title": "Channel Statistics for",
+				"description": "Statistics for a specific channel",
+				"arg": {
+					"channel": "The channel to analyze"
+				}
+			},
+			"me": {
+				"title": "My Statistics",
+				"description": "Your personal statistics across all tracked channels"
+			},
+			"user": {
+				"title": "Stats for",
+				"description": "Statistics for a specific user across all tracked channels",
+				"arg": {
+					"user": "The user to analyze"
+				}
+			}
+		},
+		"update": {
+			"channel": {
+				"description": "Update a channel with the latest messages and reactions (only ADMIN can do that)",
+				"arg": {
+					"channel": "Channel to update"
+				},
+				"embed1": {
+					"title": "Updating activity",
+					"desc": "Fetching new messages"
+				},
+				"embed2": {
+					"title": "Updating reactions",
+					"desc": "Looking through new reactions"
+				}
+			},
+			"all": {
+				"description": "Update all channels with new messages and reactions (only OWNER can do that)",
+				"errors": {
+					"notOwner": "Only the bot owner can execute this command",
+					"noChannels": "No channels registered",
+					"dateLimit": "from_date cannot be more than 10 days ago",
+					"noChId": "Failed to fetch channel ID"
+				},
+				"embed": {
+					"title": "Updating all channels",
+					"desc": "Fetching messages since"
+				},
+				"guildSummary": {
+					"unknown": "Unknown server",
+					"p1": "stored",
+					"p2": "reacted",
+					"p3": "channel streak",
+					"p4": "global streak"
+				},
+				"success": "All channels updated"
+			},
+			"timezone": {
+				"description": "Update your timezone or create your user entry if missing",
+				"arg": {
+					"timezone": "Your timezone (e.g., Europe/Paris)"
+				},
+				"errors": {
+					"invalid": "Invalid timezone"
+				},
+				"success": "Your timezone has been updated to",
+				"created": "User created with timezone"
+			},
+			"arg": {
+				"date": "(Optional) fetch messages starting from this date (YYYY-MM-DD HH:MM UTC)"
+			},
+			"errors": {
+				"notFound": "Channel not found, use /add_channel first",
+				"date": "Invalid date format. Please use YYYY-MM-DD HH:MM UTC"
+			}
+		}
+	},
+	"errors": {
+		"notAuthorized": "You are not authorized to perform this action"
+	},
+	"dbSummary": {
+		"title": {
+			"p1": "Stored",
+			"p2": "message(s). Fetched",
+			"p3": "reaction(s)."
+		},
+		"summary": {
+			"header": "Summary",
+			"success": "Success",
+			"unique": "Unique success users",
+			"reac": "Total reactions"
+		},
+		"streaks": {
+			"cCurrent": "Channel current",
+			"cMax": "Channel max",
+			"gCurrent": "Global current",
+			"gMax": "Global max"
+		}
+	},
+	"achievements": {
+		"count": {
+			"c10": "Keep going!",
+			"c42": "You found the answer in Catherine!",
+			"c69": "Nice!",
+			"c420": "Keep cool man!",
+			"gen": "🎉 Congrats on hitting this milestone!",
+			"genY": "year(s), this is actually insane!"
+		},
+		"user": {
+			"congrats": "Congratulations",
+			"msg": {
+				"p1": "You have sent cath",
+				"p2": "times!"
+			},
+			"streak": {
+				"p1": "Your streak reached",
+				"p2": "consecutive days!"
+			}
+		},
+		"channel": {
+			"msg": {
+				"p1": "Channel total of cath messages reached"
+			},
+			"streak": {
+				"p1": "Channel streak reached",
+				"p2": "consecutive days!"
+			}
+		},
+		"global": {
+			"msg": {
+				"p1": "Global total of cath messages reached"
+			},
+			"streak": {
+				"p1": "Global streak reached"
+			}
+		}
+	}
+}
