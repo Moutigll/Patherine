@@ -2,23 +2,22 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from commands import bot
 
+from utils.i18n import i18n
 from utils.utils import log
 
 # -----------------------------
 # Config
 # -----------------------------
-NOTABLE_THRESHOLDS: list[int] = [10, 25, 42, 50, 69, 365, 420]
+NOTABLE_THRESHOLDS: list[int] = [10, 25, 42, 50, 69, 420]
 
 # Optional milestone messages (can contain emojis)
 MILESTONE_MESSAGES: dict[int, str] = {
-	10: "Keep going!",
-	42: "You found the answer in Catherine!",
-	69: "Nice!",
-	365: "One whole year of caths, impressive!",
-	420: "Keep cool man!"
+	10: "achievements.count.c10",
+	42: "achievements.count.c42",
+	69: "achievements.count.c69",
+	365: "achievements.count.c365",
+	420: "achievements.count.c420"
 }
-
-FALLBACK_MESSAGE = "🎉 Congrats on hitting this milestone!"
 
 todayMilestoneCache = {}
 
@@ -106,18 +105,21 @@ def getGlobalCurrentStreak(cursor) -> int:
 
 def isMilestone(count: int) -> bool:
 	"""Return True if the count is a notable milestone."""
+	if (count % 365) == 0 and count != 0:
+		return True
 	return count in NOTABLE_THRESHOLDS or (count % 100 == 0 and count != 0)
 
-
-def getMilestoneMessage(count: int) -> str:
+def getMilestoneMessage(count: int, l) -> str:
 	"""Return the custom message for a milestone, fallback if none exists."""
-	return MILESTONE_MESSAGES.get(count, FALLBACK_MESSAGE)
+	if count % 365 == 0:
+		return f"{count // 365} {i18n.t(l, "achievements.count.genY")}"
+	return i18n.t(l, MILESTONE_MESSAGES.get(count, "achievements.count.gen"))
 
 
 # -----------------------------
 # Achievement handler
 # -----------------------------
-async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName: str, message):
+async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName: str, message, locales):
 	"""
 	Check notable milestones and send congrats messages.
 
@@ -143,17 +145,19 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	totalCount = getTotalSuccessCount(cursor)
 	totalStreak = getGlobalCurrentStreak(cursor)
 
+	ul = i18n.getLocale(message)
+
 	# --- User milestones ---
 	if (isMilestone(userCount) or isMilestone(userStreak)) and (("user", userId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(userCount):
-			parts.append(f"You've sent cath **{userCount}** times!\n{getMilestoneMessage(userCount)}")
+			parts.append(f"{i18n.t(locales[0], 'achievements.user.msg.p1')} **{userCount}** {i18n.t(locales[0], 'achievements.user.msg.p2')}")
 		if isMilestone(userStreak):
-			parts.append(f"🔥 Your streak reached **{userStreak}** consecutive days!\n")
+			parts.append(f"🔥 {i18n.t(locales[0], 'achievements.user.streak.p1')} **{userStreak}** {i18n.t(locales[0], 'achievements.user.streak.p2')}\n")
 			if not isMilestone(userCount):
 				parts.append(getMilestoneMessage(userStreak))
 
-		content = f"Congratulations {message.author.mention}! {' — '.join(parts)}"
+		content = f"{i18n.t(locales[0], 'achievements.user.congrats')} {message.author.mention}! {' — '.join(parts)}"
 		todayMilestoneCache[("user", userId, datetime.now().date())] = True
 		try:
 			await message.channel.send(content)
@@ -165,9 +169,9 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	if (isMilestone(channelCount) or isMilestone(channelStreak)) and (("channel", internalId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(channelCount):
-			parts.append(f"Channel total of cath messages reached **{channelCount}** 🎊\n{getMilestoneMessage(channelCount)}")
+			parts.append(f"{i18n.t(locales[1], 'achievements.channel.msg.p1')} **{channelCount}** 🎊\n{getMilestoneMessage(channelCount)}")
 		if isMilestone(channelStreak):
-			parts.append(f"🔥 Channel streak reached **{channelStreak}** consecutive days!\n")
+			parts.append(f"🔥 {i18n.t(locales[1], 'achievements.channel.streak.p1')} **{channelStreak}** {i18n.t(locales[1], 'achievements.channel.streak.p2')}\n")
 			if not isMilestone(channelCount):
 				parts.append(getMilestoneMessage(channelStreak))
 
@@ -183,9 +187,9 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	if (isMilestone(totalCount) or isMilestone(totalStreak)) and (("global", 0, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(totalCount):
-			parts.append(f"Global total of cath messages reached **{totalCount}** 🎊\n{getMilestoneMessage(totalCount)}")
+			parts.append(f"{i18n.t(locales[1], 'achievements.global.msg.p1')} **{totalCount}** 🎊\n{getMilestoneMessage(totalCount)}")
 		if isMilestone(totalStreak):
-			parts.append(f"🔥 Global streak reached **{totalStreak}** consecutive days!\n")
+			parts.append(f"🔥 {i18n.t(locales[1], 'achievements.global.streak.p1')} **{totalStreak}** {i18n.t(locales[1], 'achievements.channel.streak.p2')}\n")
 			if not isMilestone(totalCount):
 				parts.append(getMilestoneMessage(totalStreak))
 

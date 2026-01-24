@@ -346,5 +346,43 @@
 			"gCurrent": "Global current",
 			"gMax": "Global max"
 		}
+	},
+	"achievements": {
+		"count": {
+			"c10": "Keep going!",
+			"c42": "You found the answer in Catherine!",
+			"c69": "Nice!",
+			"c420": "Keep cool man!",
+			"gen": "🎉 Congrats on hitting this milestone!",
+			"genY": "year(s), this is actually insane!"
+		},
+		"user": {
+			"congrats": "Congratulations",
+			"msg": {
+				"p1": "You have sent cath",
+				"p2": "times!"
+			},
+			"streak": {
+				"p1": "Your streak reached",
+				"p2": "consecutive days!"
+			}
+		},
+		"channel": {
+			"msg": {
+				"p1": "Channel total of cath messages reached"
+			},
+			"streak": {
+				"p1": "Channel streak reached",
+				"p2": "consecutive days!"
+			}
+		},
+		"global": {
+			"msg": {
+				"p1": "Global total of cath messages reached"
+			},
+			"streak": {
+				"p1": "Global streak reached"
+			}
+		}
 	}
 }

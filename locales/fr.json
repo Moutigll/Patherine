@@ -347,5 +347,44 @@
 			"gCurrent": "Global actuel",
 			"gMax": "Global max"
 		}
+	},
+	"achievements": {
+		"count": {
+			"c10": "Continuez comme ça !",
+			"c42": "Vous avez trouvé la réponse dans Catherine !",
+			"c69": "Sympa !",
+			"c420": "Restez cool mec !",
+			"gen": "🎉 Félicitations pour avoir atteint ce nombre !",
+			"genY": "année(s), c’est vraiment incroyable !"
+		},
+		"user": {
+			"congrats": "Félicitations",
+			"msg": {
+				"p1": "Vous avez envoyé cath",
+				"p2": "fois !"
+			},
+			"streak": {
+				"p1": "Votre série a atteint",
+				"p2": "jours consécutifs !"
+			}
+		},
+		"channel": {
+			"msg": {
+				"p1": "Le total de messages cath du salon a atteint"
+			},
+			"streak": {
+				"p1": "La série du salon a atteint",
+				"p2": "jours consécutifs !"
+			}
+		},
+		"global": {
+			"msg": {
+				"p1": "Le total global de messages cath a atteint"
+			},
+			"streak": {
+				"p1": "La série globale a atteint"
+			}
+		}
 	}
+
 }
