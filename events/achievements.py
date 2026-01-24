@@ -15,7 +15,6 @@ MILESTONE_MESSAGES: dict[int, str] = {
 	10: "achievements.count.c10",
 	42: "achievements.count.c42",
 	69: "achievements.count.c69",
-	365: "achievements.count.c365",
 	420: "achievements.count.c420"
 }
 
@@ -119,7 +118,7 @@ def getMilestoneMessage(count: int, l) -> str:
 # -----------------------------
 # Achievement handler
 # -----------------------------
-async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName: str, message, locales):
+async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName: str, message, l):
 	"""
 	Check notable milestones and send congrats messages.
 
@@ -145,19 +144,17 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	totalCount = getTotalSuccessCount(cursor)
 	totalStreak = getGlobalCurrentStreak(cursor)
 
-	ul = i18n.getLocale(message)
-
 	# --- User milestones ---
 	if (isMilestone(userCount) or isMilestone(userStreak)) and (("user", userId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(userCount):
-			parts.append(f"{i18n.t(locales[0], 'achievements.user.msg.p1')} **{userCount}** {i18n.t(locales[0], 'achievements.user.msg.p2')}")
+			parts.append(f"{i18n.t(l, 'achievements.user.msg.p1')} **{userCount}** {i18n.t(l, 'achievements.user.msg.p2')}")
 		if isMilestone(userStreak):
-			parts.append(f"🔥 {i18n.t(locales[0], 'achievements.user.streak.p1')} **{userStreak}** {i18n.t(locales[0], 'achievements.user.streak.p2')}\n")
+			parts.append(f"🔥 {i18n.t(l, 'achievements.user.streak.p1')} **{userStreak}** {i18n.t(l, 'achievements.user.streak.p2')}\n")
 			if not isMilestone(userCount):
 				parts.append(getMilestoneMessage(userStreak))
 
-		content = f"{i18n.t(locales[0], 'achievements.user.congrats')} {message.author.mention}! {' — '.join(parts)}"
+		content = f"{i18n.t(l, 'achievements.user.congrats')} {message.author.mention}! {' — '.join(parts)}"
 		todayMilestoneCache[("user", userId, datetime.now().date())] = True
 		try:
 			await message.channel.send(content)
@@ -169,9 +166,9 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	if (isMilestone(channelCount) or isMilestone(channelStreak)) and (("channel", internalId, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(channelCount):
-			parts.append(f"{i18n.t(locales[1], 'achievements.channel.msg.p1')} **{channelCount}** 🎊\n{getMilestoneMessage(channelCount)}")
+			parts.append(f"{i18n.t(l, 'achievements.channel.msg.p1')} **{channelCount}** 🎊\n{getMilestoneMessage(channelCount)}")
 		if isMilestone(channelStreak):
-			parts.append(f"🔥 {i18n.t(locales[1], 'achievements.channel.streak.p1')} **{channelStreak}** {i18n.t(locales[1], 'achievements.channel.streak.p2')}\n")
+			parts.append(f"🔥 {i18n.t(l, 'achievements.channel.streak.p1')} **{channelStreak}** {i18n.t(l, 'achievements.channel.streak.p2')}\n")
 			if not isMilestone(channelCount):
 				parts.append(getMilestoneMessage(channelStreak))
 
@@ -187,9 +184,9 @@ async def handleAchievements(conn, cursor, internalId: int, userId: int, tzName:
 	if (isMilestone(totalCount) or isMilestone(totalStreak)) and (("global", 0, datetime.now().date()) not in todayMilestoneCache):
 		parts = []
 		if isMilestone(totalCount):
-			parts.append(f"{i18n.t(locales[1], 'achievements.global.msg.p1')} **{totalCount}** 🎊\n{getMilestoneMessage(totalCount)}")
+			parts.append(f"{i18n.t(l, 'achievements.global.msg.p1')} **{totalCount}** 🎊\n{getMilestoneMessage(totalCount)}")
 		if isMilestone(totalStreak):
-			parts.append(f"🔥 {i18n.t(locales[1], 'achievements.global.streak.p1')} **{totalStreak}** {i18n.t(locales[1], 'achievements.channel.streak.p2')}\n")
+			parts.append(f"🔥 {i18n.t(l, 'achievements.global.streak.p1')} **{totalStreak}** {i18n.t(l, 'achievements.channel.streak.p2')}\n")
 			if not isMilestone(totalCount):
 				parts.append(getMilestoneMessage(totalStreak))
 

@@ -97,7 +97,7 @@ async def getUsername(userId: str, interaction: Interaction) -> str:
 async def messagesLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	await interaction.response.defer()
 	conn, cursor = connectDb()
-	l = i18n.getChannelLocale(interaction.channel, interaction)
+	l = i18n.getChannelLocale(interaction.channel.id, interaction)
 	if channel:
 		cursor.execute("SELECT id FROM channels WHERE discord_channel_id = ?", (str(channel.id),))
 		row = cursor.fetchone()
@@ -330,7 +330,7 @@ async def streaksLeaderboard(interaction: Interaction, channel: discord.TextChan
 async def participationDaysLeaderboard(interaction: Interaction, channel: discord.TextChannel | None = None):
 	"""Show the top 10 days by count of distinct users with a success message."""
 	await interaction.response.defer()
-	l = i18n.getChannelLocale(interaction.channel, interaction)
+	l = i18n.getChannelLocale(interaction.channel.id, interaction)
 	conn, cursor = connectDb()
 
 	if channel:
@@ -342,7 +342,7 @@ async def participationDaysLeaderboard(interaction: Interaction, channel: discor
 		if not row:
 			conn.close()
 			return await interaction.followup.send(
-				f"❌ {channel.mention} {i18n.t(l, 'commands.lb.errors.not_registered')}. Use `/add channel` first.",
+				f"❌ {channel.mention} {i18n.t(l, 'commands.lb.errors.error')}. Use `/add channel` first.",
 				ephemeral=True
 			)
 		chan_id = row[0]

@@ -60,7 +60,7 @@ class I18n:
 			if isinstance(current, str):
 				return current
 
-		return ".".join(parts)
+		return "MISSING_TRANSLATION"
 
 
 	def localizations(self, *keys):

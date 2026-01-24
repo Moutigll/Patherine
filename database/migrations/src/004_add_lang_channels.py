@@ -1,6 +1,3 @@
-# database/migrations/src/004_add_lang_channels.py
-from utils.utils import connectDb
-
 def up(cursor):
 	cursor.execute("PRAGMA table_info(channels)")
 	columns = [col[1] for col in cursor.fetchall()]

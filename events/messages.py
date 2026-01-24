@@ -13,9 +13,9 @@ DEFAULT_TZ = ZoneInfo("Europe/Paris")
 
 # --- DB helpers ---
 def getChannelInfo(cursor, discordChannelId: str):
-	"""Return (internalId, tzName, discord_role_id) for channel, or None."""
+	"""Return (internalId, tzName, discord_role_id, lang) for channel, or None."""
 	cursor.execute(
-		"SELECT id, timezone, discord_role_id FROM channels WHERE discord_channel_id = ?",
+		"SELECT id, timezone, discord_role_id, lang FROM channels WHERE discord_channel_id = ?",
 		(discordChannelId,),
 	)
 	return cursor.fetchone()
@@ -165,8 +165,7 @@ async def on_message(message: discord.Message):
 		if not ch:
 			return
 		internalId, tzName, _, cl = ch
-		ul = i18n.getLocale(message)
-		cl = i18n.getLocale(cl) if cl else ul
+		cl = i18n.getLocale(cl) if cl else "en"
 		tz = ZoneInfo(tzName) if tzName else DEFAULT_TZ
 
 		# --- Local datetime in channel TZ ---
@@ -212,7 +211,7 @@ async def on_message(message: discord.Message):
 
 		roleIds = fetchUserRoleIds(cursor, userId)
 		await assignRolesAcrossGuilds(message.author, roleIds)
-		await handleAchievements(conn, cursor, internalId, userId, tzName, message, (ul, cl))
+		await handleAchievements(conn, cursor, internalId, userId, tzName, message, cl)
 
 	finally:
 		try:
