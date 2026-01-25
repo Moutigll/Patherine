@@ -266,12 +266,12 @@ def batchUpdateStreaks(cursor, conn, internalChannelId, messageMap):
 	if globalLast:
 		cursor.execute(
 			"""
-			INSERT INTO global_streak (current_streak, max_streak, last_success_date)
-			VALUES (?, ?, ?)
-			ON CONFLICT(rowid) DO UPDATE SET
-				current_streak=excluded.current_streak,
-				max_streak=excluded.max_streak,
-				last_success_date=excluded.last_success_date
+			INSERT INTO global_streak (id, current_streak, max_streak, last_success_date)
+			VALUES (1, ?, ?, ?)
+			ON CONFLICT(id) DO UPDATE SET
+				current_streak = excluded.current_streak,
+				max_streak = excluded.max_streak,
+				last_success_date = excluded.last_success_date
 			""",
 			(globalCurrent, globalMax, globalLast)
 		)

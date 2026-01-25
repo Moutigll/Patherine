@@ -165,7 +165,6 @@ async def on_message(message: discord.Message):
 		if not ch:
 			return
 		internalId, tzName, _, cl = ch
-		cl = i18n.getLocale(cl) if cl else "en"
 		tz = ZoneInfo(tzName) if tzName else DEFAULT_TZ
 
 		# --- Local datetime in channel TZ ---
