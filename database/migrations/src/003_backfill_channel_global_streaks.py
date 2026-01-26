@@ -84,9 +84,9 @@ def up(cursor):
 	if last_date:
 		# Global streak: table with single row
 		cursor.execute("""
-			INSERT INTO global_streak(current_streak, max_streak, last_success_date)
-			VALUES (?, ?, ?)
-			ON CONFLICT(rowid) DO UPDATE SET
+			INSERT INTO global_streak(id, current_streak, max_streak, last_success_date)
+			VALUES (1, ?, ?, ?)
+			ON CONFLICT(id) DO UPDATE SET
 				current_streak = excluded.current_streak,
 				max_streak = excluded.max_streak,
 				last_success_date = excluded.last_success_date
