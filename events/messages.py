@@ -51,7 +51,7 @@ def upsertStreak(cursor, table: str, messageDateIso: str, entityId: int | None =
 		cursor.execute(f"""
 			INSERT INTO {table}(id, current_streak, max_streak, last_success_date)
 			VALUES (1, 1, 1, ?)
-			ON CONFLICT(rowid) DO UPDATE SET
+			ON CONFLICT(id) DO UPDATE SET
 				current_streak = CASE
 					WHEN DATE(excluded.last_success_date) = DATE({table}.last_success_date, '+1 day')
 						THEN {table}.current_streak + 1
