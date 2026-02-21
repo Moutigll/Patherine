@@ -316,6 +316,16 @@
 				"success": "Your timezone has been updated to",
 				"created": "User created with timezone"
 			},
+			"streaks": {
+				"description": "Recompute all streaks for users, channels and global. (OWNER only)",
+				"embed": {
+					"title": "Updating streaks",
+					"desc1": "Looking through user activity history ⏳",
+					"desc2": "Looking through channel activity history ⏳",
+					"desc3": "Looking through global activity history ⏳",
+					"desc4": "Done"
+				}
+			},
 			"arg": {
 				"date": "(Optional) fetch messages starting from this date (YYYY-MM-DD HH:MM UTC)"
 			},

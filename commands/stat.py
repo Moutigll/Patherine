@@ -67,7 +67,7 @@ def computeStreakString(current: int, best: int, lastDay: date | None, tz: timez
 		currentStreak = 0
 	if currentStreak == best and best > 0:
 		return f"🔥 {best} {i18n.t(l, 'commands.stat.days')}"
-	return f"{best} {i18n.t(l, 'commands.stat.cDays')}: ({currentStreak})"
+	return f"{best} {i18n.t(l, 'commands.stat.cDays')}: {currentStreak})"
 
 
 def calculateDelays(timestamps):

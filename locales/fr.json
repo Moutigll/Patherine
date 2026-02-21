@@ -316,6 +316,16 @@
 				"success": "Votre fuseau horaire a été mis à jour vers",
 				"created": "Utilisateur créé avec le fuseau horaire"
 			},
+			"streaks": {
+				"description": "Recalcul les streaks des users, salons et le global. (OWNER uniquement)",
+				"embed": {
+					"title": "Mise à jour des séries",
+					"desc1": "Parcours de l’historique d’activité des utilisateurs ⏳",
+					"desc2": "Parcours de l’historique d’activité des salons ⏳",
+					"desc3": "Parcours de l’historique d’activité global ⏳",
+					"desc4": "Terminé"
+				}
+			},
 			"arg": {
 				"date": "(Optionnel) récupérer les messages à partir de cette date (YYYY-MM-DD HH:MM UTC)"
 			},

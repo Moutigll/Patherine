@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 import discord
 from discord import app_commands
 from zoneinfo import ZoneInfo
@@ -188,3 +188,142 @@ async def updateTimezoneCommand(interaction: discord.Interaction, tz: str):
 	conn.close()
 
 	await interaction.response.send_message(msg, ephemeral=True)
+
+CHANNEL_DEFAULT_TZ = ZoneInfo("Europe/Paris")
+CUTOFF_TIME = time(12, 7) 
+
+def calculateStreak(dates, now):
+	"""Calculates max streak and current streak from a sorted list of dates."""
+	if not dates:
+		return 0, 0, None
+
+	max_streak = running = 1
+	for i in range(1, len(dates)):
+		if dates[i] == dates[i-1] + timedelta(days=1):
+			running += 1
+			max_streak = max(max_streak, running)
+		else:
+			running = 1
+
+	# Current streak
+	current_streak = 0
+	last_date = dates[-1]
+	today = now.date()
+	if last_date == today or (last_date == today - timedelta(days=1) and now.time() < CUTOFF_TIME):
+		streak = 1
+		for i in range(len(dates)-2, -1, -1):
+			if dates[i+1] == dates[i] + timedelta(days=1):
+				streak += 1
+			else:
+				break
+		current_streak = streak
+
+	return max_streak, current_streak, last_date
+
+@updateGroup.command(
+	name="streaks",
+	description=locale_str("commands.update.streaks.description")
+)
+async def updateStreaksCommand(interaction: discord.Interaction):
+	l = i18n.getLocale(interaction)
+	# Check owner
+	if str(interaction.user.id) != OWNER_ID:
+		await interaction.response.send_message(f"❌ {i18n.t(l, 'commands.update.all.errors.notOwner')}", ephemeral=True)
+		return
+
+	await interaction.response.defer()
+	embed = await interaction.followup.send(embed=makeEmbed(f"{i18n.t(l, 'commands.update.streaks.embed.title')}...", f"{i18n.t(l, 'commands.update.streaks.embed.desc1')} ⏳"))
+	conn, cursor = connectDb()
+
+	cursor.execute("SELECT id, timezone FROM users")
+	users = cursor.fetchall()
+
+	for user_id, tz_str in users:
+		userTz = ZoneInfo(tz_str) if tz_str else CHANNEL_DEFAULT_TZ
+
+		# Get all success message dates for this user
+		cursor.execute("""
+			SELECT DISTINCT DATE(timestamp)
+			FROM messages
+			WHERE user_id = ? AND category = 'success'
+			ORDER BY DATE(timestamp) ASC
+		""", (user_id,))
+		rows = cursor.fetchall()
+		if not rows:
+			continue
+
+		dates = [datetime.fromisoformat(r[0]).date() for r in rows]
+
+		max_streak, current_streak, last_date = calculateStreak(dates, datetime.now(userTz))
+		if last_date is None:
+			continue
+
+		cursor.execute("""
+			INSERT INTO user_streaks(user_id, current_streak, max_streak, last_success_date)
+			VALUES (?, ?, ?, ?)
+			ON CONFLICT(user_id) DO UPDATE SET
+				current_streak=excluded.current_streak,
+				max_streak=excluded.max_streak,
+				last_success_date=excluded.last_success_date
+		""", (user_id, current_streak, max_streak, last_date.isoformat()))
+
+	await safeEmbed(interaction, embed=makeEmbed(f"✅ {i18n.t(l, 'commands.update.streaks.embed.title')}...", f"{i18n.t(l, 'commands.update.streaks.embed.desc2')} 💜"), message=embed)
+
+	cursor.execute("SELECT id, timezone FROM channels")
+	channels = cursor.fetchall()
+
+	for channel_id, tz_str in channels:
+		channel_tz = ZoneInfo(tz_str) if tz_str else CHANNEL_DEFAULT_TZ
+
+		cursor.execute("""
+			SELECT DISTINCT DATE(timestamp)
+			FROM messages
+			WHERE channel_id = ? AND category = 'success'
+			ORDER BY DATE(timestamp)
+		""", (channel_id,))
+		rows = cursor.fetchall()
+		dates = [datetime.fromisoformat(r[0]).date() for r in rows]
+
+		max_streak, current_streak, last_date = calculateStreak(dates, datetime.now(channel_tz))
+		if last_date is None:
+			continue
+
+		cursor.execute("""
+			INSERT INTO channel_streaks(channel_id, current_streak, max_streak, last_success_date)
+			VALUES (?, ?, ?, ?)
+			ON CONFLICT(channel_id) DO UPDATE SET
+				current_streak = excluded.current_streak,
+				max_streak = excluded.max_streak,
+				last_success_date = excluded.last_success_date
+		""", (channel_id, current_streak, max_streak, last_date.isoformat()))
+
+	await safeEmbed(interaction, embed=makeEmbed(f"✅ {i18n.t(l, 'commands.update.streaks.embed.title')}...", f"{i18n.t(l, 'commands.update.streaks.embed.desc3')} 💜"), message=embed)
+	# -------------------
+	# Global streak
+	# -------------------
+	cursor.execute("""
+		SELECT DISTINCT DATE(timestamp)
+		FROM messages
+		WHERE category = 'success'
+		ORDER BY DATE(timestamp)
+	""")
+	rows = cursor.fetchall()
+	dates = [datetime.fromisoformat(r[0]).date() for r in rows]
+	now = datetime.now(CHANNEL_DEFAULT_TZ)
+	max_streak, current_streak, last_date = calculateStreak(dates, now)
+
+	if last_date:
+		# Global streak: table with single row
+		cursor.execute("""
+			INSERT INTO global_streak(id, current_streak, max_streak, last_success_date)
+			VALUES (1, ?, ?, ?)
+			ON CONFLICT(id) DO UPDATE SET
+				current_streak = excluded.current_streak,
+				max_streak = excluded.max_streak,
+				last_success_date = excluded.last_success_date
+		""", (current_streak, max_streak, last_date.isoformat()))
+
+	conn.commit()
+	conn.close()
+
+	await safeEmbed(interaction, embed=makeEmbed(f"✅ {i18n.t(l, 'commands.update.streaks.embed.title')}...", f"{i18n.t(l, 'commands.update.streaks.embed.desc4')} 💜"), message=embed)
