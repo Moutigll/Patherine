@@ -7,7 +7,9 @@ MIGRATIONS = [
 	"002_backfill_user_streaks",
 	"003_backfill_channel_global_streaks",
 	"004_add_lang_channels",
-	"005_fix_global_streak"
+	"005_fix_global_streak",
+	"006_limit_daily_success",
+	"007_remove_bot_users",
 ]
 
 def runMigrations():
