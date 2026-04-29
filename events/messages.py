@@ -13,7 +13,7 @@ DEFAULT_TZ = ZoneInfo("Europe/Paris")
 
 # --- DB helpers ---
 def getChannelInfo(cursor, discordChannelId: str):
-	"""Return (internalId, tzName, discord_role_id, lang) for channel, or None."""
+	"""Return (internalChId, tzName, discord_role_id, lang) for channel, or None."""
 	cursor.execute(
 		"SELECT id, timezone, discord_role_id, lang FROM channels WHERE discord_channel_id = ?",
 		(discordChannelId,),
@@ -155,7 +155,11 @@ async def assignRolesAcrossGuilds(member: discord.User, roleIds: list[str]):
 @bot.event
 async def on_message(message: discord.Message):
 	# Ignore bots or irrelevant content
-	if message.author.bot or "cath" not in message.content.lower():
+	if message.author.bot or message.webhook_id is not None:
+		return
+	if message.type != discord.MessageType.default:
+		return
+	if "cath" not in message.content.lower():
 		return
 
 	conn, cursor = connectDb()
@@ -164,7 +168,7 @@ async def on_message(message: discord.Message):
 		ch = getChannelInfo(cursor, str(message.channel.id))
 		if not ch:
 			return
-		internalId, tzName, _, cl = ch
+		internalChId, tzName, _, cl = ch
 		tz = ZoneInfo(tzName) if tzName else DEFAULT_TZ
 
 		# --- Local datetime in channel TZ ---
@@ -174,6 +178,11 @@ async def on_message(message: discord.Message):
 		category = getCategoryFromTime(localDt.time())
 		if category != "success":
 			return
+		
+		try:
+			await message.add_reaction("💜")
+		except discord.HTTPException:
+			pass
 
 		# --- User checks ---
 		uidStr = str(message.author.id)
@@ -183,17 +192,43 @@ async def on_message(message: discord.Message):
 
 		messageDateIso = localDt.date().isoformat()
 
+		dayStart = localDt.replace(hour=0, minute=0, second=0, microsecond=0)
+		dayEnd = localDt.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+		cursor.execute("""
+			SELECT 1 FROM messages 
+			WHERE user_id = ? AND channel_id = ? 
+			AND timestamp >= ? AND timestamp <= ?
+			AND category = 'success'
+			LIMIT 1
+		""", (userId, internalChId, dayStart.isoformat(), dayEnd.isoformat()))
+
+		if cursor.fetchone():
+			# User already has a success message for this channel and day, do nothing
+			return
+
+		cursor.execute("""
+			SELECT COUNT(*) FROM messages 
+			WHERE user_id = ?
+			AND timestamp >= ? AND timestamp <= ?
+			AND category = 'success'
+		""", (userId, dayStart.isoformat(), dayEnd.isoformat()))
+
+		if cursor.fetchone()[0] >= 3:
+			# User already has 3+ success messages for this day, do nothing
+			return
+
 		# --- DB transaction: insert + streak update ---
 		try:
 			conn.execute("BEGIN")
-			if not insertMessage(cursor, internalId, userId, str(message.id), localDt.isoformat()):
+			if not insertMessage(cursor, internalChId, userId, str(message.id), localDt.isoformat()):
 				conn.rollback()
 				return
 
 			# User
 			upsertStreak(cursor, "user_streaks", messageDateIso, userId)
 			# Channel
-			upsertStreak(cursor, "channel_streaks", messageDateIso, internalId)
+			upsertStreak(cursor, "channel_streaks", messageDateIso, internalChId)
 			# Global
 			upsertStreak(cursor, "global_streak", messageDateIso)
 
@@ -203,14 +238,9 @@ async def on_message(message: discord.Message):
 			raise
 
 		# --- Post-commit async tasks ---
-		try:
-			await message.add_reaction("💜")
-		except discord.HTTPException:
-			pass
-
 		roleIds = fetchUserRoleIds(cursor, userId)
 		await assignRolesAcrossGuilds(message.author, roleIds)
-		await handleAchievements(conn, cursor, internalId, userId, tzName, message, cl)
+		await handleAchievements(conn, cursor, internalChId, userId, tzName, message, cl)
 
 	finally:
 		try:

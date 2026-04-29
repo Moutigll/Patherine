@@ -1,3 +1,5 @@
+from email.mime import message
+
 import discord
 from datetime import datetime, timedelta, timezone
 from zoneinfo import available_timezones
@@ -73,6 +75,10 @@ async def fetchMessages(
 		historyKwargs["after"] = fromDate
 
 	async for msg in channel.history(**historyKwargs):
+		if msg.author.bot or msg.webhook_id is not None:
+			return
+		if msg.type != discord.MessageType.default:
+			return
 		if "cath" not in msg.content.lower():
 			continue
 
@@ -109,6 +115,15 @@ async def fetchMessages(
 			continue
 		if category == "choke" and "success" in existing:
 			continue
+
+		if category == "success":
+			cursor.execute(
+				"SELECT COUNT(*) FROM messages WHERE user_id = ? AND category = 'success' AND DATE(timestamp) = ?",
+				(userId, dayStr)
+			)
+			successCount = cursor.fetchone()[0]
+			if successCount >= 3:
+				continue
 
 		cursor.execute(
 			"INSERT OR IGNORE INTO messages (message_id, channel_id, user_id, timestamp, category) VALUES (?, ?, ?, ?, ?)",

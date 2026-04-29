@@ -113,7 +113,8 @@
 				},
 				"embed1": {
 					"title": "Fetching activity",
-					"desc": "Looking through message history"
+					"desc": "Looking through message history",
+					"error": "Failed to fetch messages for this channel. Please check the bot permissions and try again."
 				},
 				"embed2": {
 					"title": "Updating reactions",

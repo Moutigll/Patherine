@@ -113,7 +113,8 @@
 				},
 				"embed1": {
 					"title": "Récupération de l'activité",
-					"desc": "Parcours de l'historique des messages"
+					"desc": "Parcours de l'historique des messages",
+					"error": "Échec de la récupération des messages pour ce salon. Veuillez vérifier les permissions du bot et réessayer."
 				},
 				"embed2": {
 					"title": "Mise à jour des réactions",

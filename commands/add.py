@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo, available_timezones
 from commands import addGroup, makeEmbed, OWNER_ID
 from commands.populateDb import authorize, batchUpdateStreaks, fetchMessages, fetchReactions, generateSummary
 from utils.i18n import i18n, locale_str
-from utils.utils import connectDb, languageAutocomplete,timezoneAutocomplete, safeEmbed
+from utils.utils import connectDb, languageAutocomplete, log,timezoneAutocomplete, safeEmbed
 
 @addGroup.command(
 	name="admin",
@@ -94,7 +94,15 @@ async def addChannelCommand(
 	embedMsg = await interaction.followup.send(embed=makeEmbed(f"{i18n.t(l, 'commands.add.channel.embed1.title')}...", f" {i18n.t(l, 'commands.add.channel.embed1.desc')} ⏳"))
 	addStart = datetime.now(timezone.utc)
 
-	stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name), embedMsg, addStart)
+	try:
+		stored, msgMap = await fetchMessages(channel, internalId, cursor, conn, ZoneInfo(tz_name), embedMsg, addStart)
+	except Exception as e:
+		log(f"Error fetching messages for channel {channel.id}: {e}")
+		await safeEmbed(interaction, embed=makeEmbed(f"❌ {i18n.t(l, 'commands.add.channel.embed1.error')}", str(e)), message=embedMsg)
+		cursor.execute("DELETE FROM channels WHERE id = ?", (internalId,))
+		conn.commit()
+		conn.close()
+		return
 
 	(chCurr, chMax), (glCurr, glMax) = batchUpdateStreaks(cursor, conn, internalId, msgMap)
 
