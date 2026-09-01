@@ -76,9 +76,9 @@ async def fetchMessages(
 
 	async for msg in channel.history(**historyKwargs):
 		if msg.author.bot or msg.webhook_id is not None:
-			return
+			continue
 		if msg.type != discord.MessageType.default:
-			return
+			continue
 		if "cath" not in msg.content.lower():
 			continue
 
